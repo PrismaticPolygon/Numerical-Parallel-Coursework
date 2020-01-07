@@ -112,14 +112,14 @@ void setUp(int argc, char** argv) {
     }
   }
 
-  std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
+//  std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
 
   if (tPlotDelta<=0.0) {
     std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
   }
   else {
-    std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
+//    std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
   }
 }
@@ -284,7 +284,7 @@ void updateBody() {
 
 	  tFinal = t;
 
-	  std::cout << x[0][0] << ", " << x[0][1] << ", " << x[0][2] << time << std::endl;
+//	  std::cout << x[0][0] << ", " << x[0][1] << ", " << x[0][2] << time << std::endl;
 
   }
 

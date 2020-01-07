@@ -55,11 +55,11 @@ def run():
 
                 if len(out) >= 2:
 
-                    coordinates = out[-2]
+                    coordinates = ",".join([i.replace(" ", "") for i in out[:-1]])
 
                     message = coordinates
 
-                    file.write(step + "," + coordinates.replace(" ", "") + "\n")
+                    file.write(step + "," + message + "\n")
 
                 else:
 

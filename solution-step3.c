@@ -2,8 +2,6 @@
 //
 // g++ -O3 --std=c++11 solution-step3.c -o solution-step3
 //
-// ./solution-step2 0.01 10 1e-8 0 0 0 0 0 0 4 3 0 0 0 0 0 5 3 4 0 0 0 0 3
-//
 // There should be a result.pvd file that you can open with Paraview.
 // Sometimes, Paraview requires to select the representation "Point Gaussian"
 // to see something meaningful.
@@ -204,6 +202,8 @@ void updateBody() {
 	  forces[i] = new double[3]{0.0, 0.0, 0.0};
 	  
   }
+
+  int* buckets = new int*[NumberOfBodies];   // Each element i of buckets will map to a particle i. The value will be the bucket that particles belongs to.
   
   // Iterate through the particles, from 0 to 1
   for (int i = 0; i < NumberOfBodies - 1; i++) {
@@ -259,6 +259,9 @@ void updateBody() {
 	  }
     
   }
+
+  // We need 10 buckets. We need to know the maximum value. And we do! That's the point of maxV.
+  // It'll require a third loop, unfortunately, and I have NO idea what the Euler time shit means.
   
   for (int i = 0; i < NumberOfBodies; i++) {	// Update positions and velocity of particles
 	  
@@ -275,6 +278,23 @@ void updateBody() {
 	  }
 	  
 	  maxV = std::max(maxV, std::sqrt(totalV));
+
+  }
+
+  // Starting at 0 and up to maxV, sub-divide it into 10.
+  double vBucket = (maxV - 0) / 10
+
+  for (int i = 0; i < NumberOfBodies; i++) {	// Update positions and velocity of particles
+
+	  double totalV = 0;
+
+	  for (int k = 0; k < 3; k++) {
+
+		  totalV += v[i][k] * v[i][k];
+
+	  }
+
+	  buckets[i] = round(totalV / vBucket)
 
   }
   

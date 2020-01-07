@@ -24,12 +24,6 @@ args = [
 
 # Compute the distances between any two collision points for different time step sizes. I.e. pick two random collision points
 # and compute the distance between them. If I have close to... 300 points, that gives me a ridiculous number of points!
-# What is the point?
-# Does that mean: distance between time step sizes against distance between points? It is certainly possible.
-# Might require some nifty pandas, mind you.
-
-# Does that mean 'compute the distance between two locations where collisions have occurred'? Or
-# 'compute the distance between two points that are about to collide'?
 
 # Can you derive the converge order of the method experimentally using the collision points?
 
@@ -71,22 +65,17 @@ def run():
 
                 print("{} ({:.2f}s)".format(message, time.time() - start))
 
-def plot():
+def plot(num_points=100, type=None):
 
-    # So we want to generate some DISTANCES. We'll pick random pairs of rows. For each row, we'll compute the difference in
-    # timestep, the distance between the collision points,
-
-    num_points = 100
-    
     step_differences = []
     collision_differences = []
 
     min_step_difference = math.inf
-    max_step_difference = 0
+    max_step_difference = -math.inf
 
     min_collision_difference = math.inf
-    max_collision_difference = 0
-    
+    max_collision_difference = -math.inf
+
     df = pd.read_csv("solution-step2.csv", dtype={"step": np.float64, "x": np.float64, "y": np.float64, "z": np.float64})
 
     for i in range(num_points):
@@ -96,12 +85,18 @@ def plot():
         a = sample.iloc[0]
         b = sample.iloc[1]
 
-        step_difference = a["step"] - b["step"]
-        collision_difference = math.sqrt(
+        step_difference = abs(a["step"] - b["step"])
+
+        collision_difference = abs(math.sqrt(
             (a["x"] - b["x"]) ** 2 +
             (a["y"] - b["y"]) ** 2 +
-            (a["z"] - b["z"]) ** 2 
-        )
+            (a["z"] - b["z"]) ** 2
+        ))
+
+        if type == "log":
+
+            step_difference = math.log(step_difference)
+            collision_difference = math.log(collision_difference)
 
         step_differences.append(step_difference)
         collision_differences.append(collision_difference)
@@ -122,21 +117,26 @@ def plot():
 
             max_collision_difference = collision_difference
 
-    # Should be the min and max, really.
+    plt.scatter(step_differences, collision_differences, alpha=0.5)
 
-    print(min_step_difference, max_step_difference)
-    print(min_collision_difference, max_collision_difference)
+    plt.xlim([min_step_difference, max_step_difference])
+    plt.ylim([min_collision_difference, max_collision_difference])
 
-    graph = plt.figure()
-    # axes = graph.add_axes([min_step_difference, min_collision_difference, max_step_difference, max_collision_difference])
-    axes = graph.add_axes([0, 0, 1, 1])
 
-    axes.scatter(step_differences, collision_differences)
+    plt.title("Collision difference against step difference \n"
+              "for {} randomly chosen pairs of collisions".format(num_points))
+    plt.xlabel('Step difference')
+    plt.ylabel('Collision difference')
 
-    axes.set_ylabel("Collision difference")
-    axes.set_xlabel("Step difference")
-    
-    graph.suptitle("Collision difference against step difference \nfor {} randomly chosen pairs of collisions".format(num_points))
+    if type == "log":
+
+        plt.title("Log-log collision difference against step difference \n"
+                  "for {} randomly chosen pairs of collisions".format(num_points))
+        plt.xlabel('Log step difference')
+        plt.ylabel('Log collision difference')
+
+
+    plt.tight_layout()
 
     plt.show()
 
@@ -150,5 +150,4 @@ if __name__ == "__main__":
 
         run()
 
-    plot()
-
+    plot(type="log", num_points=300)

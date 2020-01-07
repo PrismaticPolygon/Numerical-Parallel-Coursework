@@ -242,7 +242,7 @@ void updateBody() {
 			 NumberOfBodies--;
 			 j--;	// Decrement j as the "old" j has been deleted
 
-			 std::cout << x[i][0] << ", " << x[i][1] << ", " << x[i][2] << time << std::endl;
+			 std::cout << x[i][0] << "," << x[i][1] << "," << x[i][2] << "," << t << std::endl;
 
 
 		  }	else {

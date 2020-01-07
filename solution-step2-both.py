@@ -55,7 +55,7 @@ def run():
 
                 if len(out) >= 2:
 
-                    coordinates = ",".join([i.replace(" ", "") for i in out[:-1]])
+                    coordinates = ",".join(out[:-1])
 
                     message = coordinates
 

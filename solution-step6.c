@@ -29,15 +29,13 @@ double   maxV     = 0.0;    // Maximum velocity of all particles.
 double   minDx;             // Minimum distance between two particles.
 double   diameter = 0.01;   // Diameter below which particles merge.
 
-// Not quite what I had in mind.
-
 /**
  * Set up scenario from the command line.
  *
  * This operation is not to be changed in the assignment.
  */
 void setUp(int argc, char** argv) {
-	
+
   NumberOfBodies = (argc-4) / 7;
 
   x    = new double*[NumberOfBodies];
@@ -51,7 +49,7 @@ void setUp(int argc, char** argv) {
   timeStepSize = std::stof(argv[readArgument]); readArgument++;
 
   for (int i = 0; i < NumberOfBodies; i++) {
-	  
+
     x[i] = new double[3];
     v[i] = new double[3];
 
@@ -66,26 +64,26 @@ void setUp(int argc, char** argv) {
     mass[i] = std::stof(argv[readArgument]); readArgument++;
 
     if (mass[i] <= 0.0) {
-    	
+
       std::cerr << "invalid mass for body " << i << std::endl;
       exit(-2);
-      
+
     }
 
   }
 
   std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
-  
+
   if (tPlotDelta <= 0.0) {
 
     std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
 
   } else {
-  
+
     std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
-  
+
   }
 
 }
@@ -146,8 +144,25 @@ void printParaviewSnapshot() {
   videoFile << "<DataSet timestep=\"" << counter << "\" group=\"\" part=\"0\" file=\"" << filename.str() << "\"/>" << std::endl;
 }
 
-// New approach. Create our list of buckets, then SORT IT.
-// Nope. It's the indices that we care about.
+// Tasks can communicate through shared memory.
+// Critical sections remain available.
+// I should probably check if step3 actually works first.
+// Each thread places n/p elements in each local buckets, then thread i gathers the contents
+// of bucket i from each processor and sorts.
+// We, obviously, don't need to sort.
+// It looks like it works, with just a few hitches.
+// I'm really very unhappy with my solution.
+// But I've just realised that I don't need a 2D array, just a contiguous 1-D array, and I'm good.
+// So let's work on that: it should simplify things.
+// Aha, that must be the sorting that he means!
+// So I have my array of particles. I can map each one to a velocity, and I sort those.
+// But I CAN'T lose the index that I start with.
+
+// Parallelise. In particular: parallelise the sorting. We SORT the particles into buckets
+// after each time step has passed. It doesn't really matter when, actually.
+
+// Parallel sorting in OpenMP: https://homepages.math.uic.edu/~jan/mcs572/parallelsorting.pdf
+// Complex, may be useful: https://www.smaizys.com/programing/bucket-sort-parallel-algorithm-using-c-openmpi/
 
 /**
  * This is the only operation you are allowed to change in the assignment.
@@ -156,12 +171,12 @@ void updateBody() {
 
   minDx  		  = std::numeric_limits<double>::max();	// The minimum distance between particles
   forces          = new double*[NumberOfBodies];	    // A 2D array of the forces on each molecule
-  int numBuckets  = 10;									// The number of buckets
+  int numBuckets  = 2;									// The number of buckets
 
   for (int i = 0; i < NumberOfBodies; i++) {            // Initialise forces on each particle to 0
-	  
+
 	forces[i] = new double[3]{0.0, 0.0, 0.0};
-	  
+
   }
 
   /*
@@ -194,7 +209,7 @@ void updateBody() {
       }
 
       totalV = std::sqrt(totalV);
-	  int bucket = round(totalV / vBucket);	
+	  int bucket = round(totalV / vBucket);
 
       buckets1D[i] = bucket;
       bucketCounts[bucket]++;
@@ -218,13 +233,13 @@ void updateBody() {
 //    std::cout << i << ": " << bucketCounts[i] << ", ";
 //
 //  std::cout << std::endl;
-  
+
   int** buckets2D = new int*[numBuckets];	// Create a 2D list of buckets using bucketCounts.
-  
+
   for (int i = 0; i < numBuckets; i++) {
-  
+
 	buckets2D[i] = new int[bucketCounts[i]];
-  
+
   }
 
   for (int i = 0; i < NumberOfBodies; i++) {    // Set the current element of bucket k to particle i
@@ -348,17 +363,17 @@ void updateBody() {
     }
 
   }
-  
+
   if (NumberOfBodies == 1) {	// Terminate
-	  
+
 	tFinal = t;
-	  
+
 	std::cout << x[0][0] << ", " << x[0][1] << ", " << x[0][2] << std::endl;
-	  
+
   }
 
   t += timeStepSize;
-  
+
   delete[] forces;
 
 }
@@ -404,14 +419,14 @@ int main(int argc, char** argv) {
   }
 
   int timeStepCounter = 0;
-  
+
   while (t <= tFinal) {
-  	
+
     updateBody();
     timeStepCounter++;
-    
+
     if (t >= tPlot) {
-    	
+
       printParaviewSnapshot();
       std::cout << "plot next snapshot"
     		    << ",\t time step=" << timeStepCounter
@@ -423,7 +438,7 @@ int main(int argc, char** argv) {
 
       tPlot += tPlotDelta;
     }
-    
+
   }
 
   closeParaviewVideoFile();

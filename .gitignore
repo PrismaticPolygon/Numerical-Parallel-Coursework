@@ -1,14 +1,6 @@
-results
-*.pvd
-*.vtp
+*
 
-solution-step1
-solution-step2
-solution-step3
-solution-step4
-solution-step5
-solution-step6
-
-.idea
-.idea/*
-*.xml
+!*.pdf
+!*.c
+!*md
+!*py

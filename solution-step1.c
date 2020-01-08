@@ -1,20 +1,5 @@
-// Translate this file with
-//
-// g++ -O3 --std=c++11 solution-step1.c -o solution-step1
-//
-//
-// There should be a result.pvd file that you can open with Paraview.
-// Sometimes, Paraview requires to select the representation "Point Gaussian"
-// to see something meaningful.
-//
 // (C) 2018-2019 Tobias Weinzierl
 
-/*
- * All objects should move freely through space. Ensure that the global statistics
- * (minimal distance between all objects and maximum velocity) are still computed correctly
- * Marks are given for correctness and efficiency (try to spot redundant computations).
- * Worth 25 marks. 
- */
 
 #include <fstream>
 #include <sstream>
@@ -25,43 +10,21 @@
 #include <iomanip>
 
 
-double t          = 0;
-double tFinal     = 0;
-double tPlot      = 0;
-double tPlotDelta = 0;
+double t            = 0;
+double tFinal       = 0;
+double tPlot        = 0;
+double tPlotDelta   = 0;
+double timeStepSize = 0.0;  // Global time step size used.
 
 int NumberOfBodies = 0;
 
-/**
- * Pointer to pointers. Each pointer in turn points to three coordinates, i.e.
- * each pointer represents one molecule/particle/body.
- */
-double** x;	// A 2D array of molecule coordinates: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
+double** x;	        // A 2D array of particle coordinates: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
+double** v;         // A 2D array of particle velocities: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
+double** forces;    // A 2D array of particle forces: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
+double*  mass;      // An array of molecule masses [m1, m2, m3]
 
-/**
- * Equivalent to x storing the velocities.
- */
-double** v; // A 2D array of molecule velocities: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
-
-/**
- * One mass entry per molecule/particle.
- */
-double*  mass; // An array of molecule masses [m1, m2, m3]
-
-/**
- * Global time step size used.
- */
-double   timeStepSize = 0.0;
-
-/**
- * Maximum velocity of all particles.
- */
-double   maxV;
-
-/**
- * Minimum distance between two elements.
- */
-double   minDx;
+double   maxV;      //  Maximum velocity of all particles.
+double   minDx;     // Minimum distance between two elements.
 
 
 /**
@@ -186,12 +149,11 @@ void updateBody() {
 	
   maxV   = 0.0;
   minDx  = std::numeric_limits<double>::max();
-  
-  double** forces = new double*[NumberOfBodies];	// A 2D array of the forces on each molecule [[fx1, fy1, fz1], [fx2, fy2, fz2], [fx3, fy3, fz3]]
-  
+  forces = new double*[NumberOfBodies];
+
   for (int i = 0; i < NumberOfBodies; i++) {
 	  
-	  forces[i] = new double[3]{0, 0, 0};
+	  forces[i] = new double[3]{0.0, 0.0, 0.0};
 	  
   }
   
@@ -203,21 +165,21 @@ void updateBody() {
 		  
 		  // Calculate the distance from particle i to particle j
 		  const double distance = sqrt(
-		        (x[i][0]-x[j][0]) * (x[i][0]-x[j][0]) +
-		        (x[i][1]-x[j][1]) * (x[i][1]-x[j][1]) +
-		        (x[i][2]-x[j][2]) * (x[i][2]-x[j][2])
-		      );
-	  
-		  minDx = std::min( minDx,distance );
+            (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
+            (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
+            (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
+          );
 		
 		  for (int k = 0; k < 3; k++) {
 		  
-			  double force = (x[j][k]-x[i][k]) * mass[i] * mass[j] / distance / distance / distance ;
+			  double force = (x[j][k] - x[i][k]) * mass[i] * mass[j] / distance / distance / distance ;
 			
 			  forces[i][k] += force;
 			  forces[j][k] -= force;
 			  
 		  }
+
+		  minDx = std::min( minDx,distance );
 		  
 	  }
     
@@ -228,12 +190,9 @@ void updateBody() {
 	  double totalV = 0;
 	  
 	  for (int k = 0; k < 3; k++) {
-		  
-		  // Update particle i coordinates in dimension k
-		  x[i][k] = x[i][k] + timeStepSize * v[i][k];
-		  
-		  // Update particle i velocity in dimension k 
-		  v[i][k] = v[i][k] + timeStepSize * forces[i][k] / mass[i];
+
+		  x[i][k] = x[i][k] + timeStepSize * v[i][k];                    // Update particle i coordinates in dimension k
+		  v[i][k] = v[i][k] + timeStepSize * forces[i][k] / mass[i];     // Update particle i velocity in dimension k
 		  
 		  totalV += v[i][k] * v[i][k];
 		  

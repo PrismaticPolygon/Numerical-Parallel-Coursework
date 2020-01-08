@@ -13,8 +13,6 @@ def build_particle_string(num_particles=100, min_mass=1, max_mass=10):
     particles_per_axis = int(num_particles ** (1.0 / 3.0))
     string = ""
 
-    print(particles_per_axis)
-
     # h = 1.0 /numberOfParticlesPerAxis
     h = 1.0
 

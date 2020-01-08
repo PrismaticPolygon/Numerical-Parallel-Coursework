@@ -1,19 +1,6 @@
-// Translate this file with
-//
 // g++ -O3 --std=c++11 solution-step3.c -o solution-step3
 //
-// There should be a result.pvd file that you can open with Paraview.
-// Sometimes, Paraview requires to select the representation "Point Gaussian"
-// to see something meaningful.
-//
 // (C) 2018-2019 Tobias Weinzierl
-
-/*
- * All objects should move freely through space. Ensure that the global statistics
- * (minimal distance between all objects and maximum velocity) are still computed correctly
- * Marks are given for correctness and efficiency (try to spot redundant computations).
- * Worth 25 marks. 
- */
 
 #include <fstream>
 #include <sstream>
@@ -24,53 +11,23 @@
 #include <iomanip>
 
 
-double t           = 0;
-double tFinal      = 0;
-double tPlot       = 0;
-double tPlotDelta  = 0;
+double t             = 0;   // Start time.
+double tFinal        = 0;   // End time.
+double tPlot         = 0;
+double tPlotDelta    = 0;
+double timeStepSize  = 0.0; // Global time step size used.
 
-int NumberOfBodies = 0;
+int NumberOfBodies = 0;     // Number of particles.
 
-/**
- * Pointer to pointers. Each pointer in turn points to three coordinates, i.e.
- * each pointer represents one molecule/particle/body.
- */
-double** x;	// A 2D array of molecule coordinates: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
+double** x;	                // A 2D array of particle coordinates: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
+double** v;                 // A 2D array of particle velocities: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
+double*  mass;              // An array of particle masses [m1, m2, m3]
+double** forces;            // A 2D array of particle forces: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
 
-/**
- * Equivalent to x storing the velocities.
- */
-double** v; // A 2D array of molecule velocities: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
 
-/**
- * One mass entry per molecule/particle.
- */
-double*  mass; // An array of molecule masses [m1, m2, m3]
-
-/**
- * Equivalent to x storing the forces.
- */
-double** forces; // A 2D array of molecule forces: [[x1, y1, z1], [x2, y2, z2], [x3, y3, z3]]
-
-/**
- * Global time step size used.
- */
-double   timeStepSize = 0.0;
-
-/**
- * Maximum velocity of all particles.
- */
-double   maxV = 0.0;
-
-/**
- * Minimum distance between two particles.
- */
-double   minDx;
-
-/*
-* Diameter below which particles merge.
-*/
-double   diameter = 0.01;
+double   maxV     = 0.0;    // Maximum velocity of all particles.
+double   minDx;             // Minimum distance between two particles.
+double   diameter = 0.01;   // Diameter below which particles merge.
 
 /**
  * Set up scenario from the command line.
@@ -131,9 +88,7 @@ void setUp(int argc, char** argv) {
 
 }
 
-
 std::ofstream videoFile;
-
 
 /**
  * This operation is not to be changed in the assignment.
@@ -145,10 +100,6 @@ void openParaviewVideoFile() {
             << "<Collection>";
 }
 
-
-
-
-
 /**
  * This operation is not to be changed in the assignment.
  */
@@ -156,7 +107,6 @@ void closeParaviewVideoFile() {
   videoFile << "</Collection>"
             << "</VTKFile>" << std::endl;
 }
-
 
 /**
  * The file format is documented at http://www.vtk.org/wp-content/uploads/2015/04/file-formats.pdf
@@ -216,12 +166,10 @@ void updateBody() {
   */
 
   int* buckets1D = new int[NumberOfBodies];  // Each element i of buckets will map to a particle i. The value will be the bucket that particle i belongs to.
-  int* bucketCounts = new int[numBuckets]{0, 0};	 // The number of particles in each bucket i
+  int* bucketCounts = new int[numBuckets]{0, 0};	 // The number of particles to go in each bucket i
   int* bucketCounts2 = new int[numBuckets]{0, 0};	 // The number of particles in each bucket i
 
-	// We seem to think that there are TWO buckets. In reality...
-
-  double vBucket = maxV / (numBuckets - 1);						// The partition
+  double vBucket = maxV / (numBuckets - 1);		// The partition
 
   for (int i = 0; i < NumberOfBodies; i++) {	// For each particle, calculate which bucket it should go into.
 
@@ -250,23 +198,21 @@ void updateBody() {
 
   }
 
-  std::cout << "Buckets: ";
+//  std::cout << "Buckets: ";
+//
+//  for (int i = NumberOfBodies - 1; i >= 0; i--) // Correct.
+//
+//    std::cout << buckets1D[i];
+//
+//  std::cout << std::endl;
+//
+//  std::cout << "Counts: ";
 
-  for (int i = NumberOfBodies - 1; i >= 0; i--) // Correct.
-
-    std::cout << buckets1D[i];
-
-  std::cout << std::endl;
-
-  std::cout << "Counts: ";
-
-  // The error is here, interestingly enough,
-
-  for (int i = 0; i < numBuckets; i++) // Correct.
-
-    std::cout << i << ": " << bucketCounts[i] << ", ";
-
-  std::cout << std::endl;
+//  for (int i = 0; i < numBuckets; i++) // Correct.
+//
+//    std::cout << i << ": " << bucketCounts[i] << ", ";
+//
+//  std::cout << std::endl;
   
   int** buckets2D = new int*[numBuckets];	// Create a 2D list of buckets using bucketCounts.
   
@@ -280,14 +226,12 @@ void updateBody() {
 
     int k = buckets1D[i];
 
-	//std::cout << i << ", " << k << ", " << bucketCounts2[k] << std::endl;
+//	std::cout << i << ", " << k << ", " << bucketCounts2[k] << std::endl;
 
     buckets2D[k][bucketCounts2[k]] = i;
     bucketCounts2[k]++;
 
   }
-
-  // Okay. I am happy to declare this working, though 
 
   //for (int i = 0; i < numBuckets; i++) { // 000 as expected.
 
@@ -303,19 +247,13 @@ void updateBody() {
 
   //}
 
-// Another seg fault, though we did make it further this time around. Distressingly, every bucket is empty...
-// It seems to work. Let's try with some more particles.
-// I wonder what this looks like on Paraview!
-
   for (int k = 0; k < numBuckets; k++) {	// Iterate through buckets
 
     int bucketSize = bucketCounts[k];                           // The number of particles in the bucket
     int timeSteps = pow(2, k);									// The number of timesteps to run bucket k for
-	double timeStepSizeEuler = timeStepSize / timeSteps;  // The size of the timestep for bucket k
+	double timeStepSizeEuler = timeStepSize / timeSteps;        // The size of the timestep for bucket k
 
-	// For some reason, timeStepSizeEuler is 0
-
-    std::cout << k << ", " << bucketSize << ", " << timeSteps << ", " << timeStepSize << ", " << timeStepSizeEuler << std::endl;
+//    std::cout << k << ", " << bucketSize << ", " << timeSteps << ", " << timeStepSize << ", " << timeStepSizeEuler << std::endl;
 
 	for (int q = 0; q < timeSteps; q++) {
 

@@ -7,7 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 args = [
-    "./solution-step2-both",                    # Compiled C executable
+    "./numerical-report",                       # Compiled C executable
     "0.01",                                     # tPlotDelta
     "10",                                       # tFinal
     "1e-8",                                     # timeStepSize
@@ -32,7 +32,7 @@ mantissa = np.linspace(1, 9.9, 90)
 
 def run():
 
-    with open("solution-step2-both.csv", "w") as file:
+    with open("numerical-report.csv", "w") as file:
 
         file.write("step,x_1,y_1,z_1,t_1,x_2,y_2,z_2,t_2\n")
 
@@ -144,11 +144,9 @@ def plot(num_points=100, type=None):
 
 if __name__ == "__main__":
 
-    if not os.path.exists("solution-step2-both"):        # Compile solution-step2 if it doesn't exist
+    subprocess.call(["g++", "-O3", "--std=c++11", "numerical-report.c", "-o", "numerical-report"])
 
-        subprocess.call(["g++", "-O3", "--std=c++11", "solution-step2-both.c", "-o", "solution-step2-both"])
-
-    if not os.path.exists("solution-step2-both.csv"):    # Run solution-step2 if no output exists
+    if not os.path.exists("numerical-report.csv"):    # Run solution-step2 if no output exists
 
         run()
 

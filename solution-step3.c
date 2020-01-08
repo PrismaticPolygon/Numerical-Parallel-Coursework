@@ -117,14 +117,18 @@ void setUp(int argc, char** argv) {
 
   std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
   
-  if (tPlotDelta<=0.0) {
+  if (tPlotDelta <= 0.0) {
+
     std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
-  }
-  else {
+
+  } else {
+  
     std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
+  
   }
+
 }
 
 
@@ -197,7 +201,7 @@ void updateBody() {
 
   minDx  		  = std::numeric_limits<double>::max();	// The minimum distance between particles
   forces          = new double*[NumberOfBodies];	    // A 2D array of the forces on each molecule
-  int numBuckets  = 10;									// The number of buckets
+  int numBuckets  = 2;									// The number of buckets
 
   for (int i = 0; i < NumberOfBodies; i++) {            // Initialise forces on each particle to 0
 	  
@@ -212,10 +216,12 @@ void updateBody() {
   */
 
   int* buckets1D = new int[NumberOfBodies];  // Each element i of buckets will map to a particle i. The value will be the bucket that particle i belongs to.
-  int* bucketCounts = new int[numBuckets]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	 // The number of particles in each bucket i
-  int* bucketCounts2 = new int[numBuckets]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0};	 // The number of particles in each bucket i
+  int* bucketCounts = new int[numBuckets]{0, 0};	 // The number of particles in each bucket i
+  int* bucketCounts2 = new int[numBuckets]{0, 0};	 // The number of particles in each bucket i
 
-  double vBucket = maxV / 10;						// The partition
+	// We seem to think that there are TWO buckets. In reality...
+
+  double vBucket = maxV / (numBuckets - 1);						// The partition
 
   for (int i = 0; i < NumberOfBodies; i++) {	// For each particle, calculate which bucket it should go into.
 
@@ -235,13 +241,32 @@ void updateBody() {
       }
 
       totalV = std::sqrt(totalV);
+	  int bucket = round(totalV / vBucket);	
 
-      buckets1D[i] = round(totalV / vBucket);
-      bucketCounts[i]++;
+      buckets1D[i] = bucket;
+      bucketCounts[bucket]++;
 
   	}
 
   }
+
+  std::cout << "Buckets: ";
+
+  for (int i = NumberOfBodies - 1; i >= 0; i--) // Correct.
+
+    std::cout << buckets1D[i];
+
+  std::cout << std::endl;
+
+  std::cout << "Counts: ";
+
+  // The error is here, interestingly enough,
+
+  for (int i = 0; i < numBuckets; i++) // Correct.
+
+    std::cout << i << ": " << bucketCounts[i] << ", ";
+
+  std::cout << std::endl;
   
   int** buckets2D = new int*[numBuckets];	// Create a 2D list of buckets using bucketCounts.
   
@@ -251,20 +276,46 @@ void updateBody() {
   
   }
 
-  for (int i = 0; i < NumberOfBodies; i++) {    // Set the next element of bucket k to i
+  for (int i = 0; i < NumberOfBodies; i++) {    // Set the current element of bucket k to particle i
 
     int k = buckets1D[i];
 
-    buckets2D[k][bucketCounts2[i]] = i;
-    bucketCounts2[i]++;
+	//std::cout << i << ", " << k << ", " << bucketCounts2[k] << std::endl;
+
+    buckets2D[k][bucketCounts2[k]] = i;
+    bucketCounts2[k]++;
 
   }
+
+  // Okay. I am happy to declare this working, though 
+
+  //for (int i = 0; i < numBuckets; i++) { // 000 as expected.
+
+	//std::cout << "Bucket " << i << ": ";
+
+    //for (int j = bucketCounts[i] - 1; j >= 0; j--) {
+
+		//std::cout << buckets2D[i][j];	// Has two three elements in 0, 0 and 2. NOT 1. Why?
+
+    //}
+
+    //std::cout << std::endl;
+
+  //}
+
+// Another seg fault, though we did make it further this time around. Distressingly, every bucket is empty...
+// It seems to work. Let's try with some more particles.
+// I wonder what this looks like on Paraview!
 
   for (int k = 0; k < numBuckets; k++) {	// Iterate through buckets
 
     int bucketSize = bucketCounts[k];                           // The number of particles in the bucket
     int timeSteps = pow(2, k);									// The number of timesteps to run bucket k for
-	double timeStepSizeEuler = timeStepSize * (1 / timeSteps);  // The size of the timestep for bucket k
+	double timeStepSizeEuler = timeStepSize / timeSteps;  // The size of the timestep for bucket k
+
+	// For some reason, timeStepSizeEuler is 0
+
+    std::cout << k << ", " << bucketSize << ", " << timeSteps << ", " << timeStepSize << ", " << timeStepSizeEuler << std::endl;
 
 	for (int q = 0; q < timeSteps; q++) {
 
@@ -275,6 +326,8 @@ void updateBody() {
         for (int b = a + 1; b < bucketSize; b++) {
 
           int j = buckets2D[k][b];
+
+		  std::cout << "(" << i << ", " << j << ")" << std::endl;
 
           const double distance = sqrt(
             (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
@@ -338,10 +391,10 @@ void updateBody() {
 
         for (int z = 0; z < 3; z++) {
 
-          x[i][z] = x[i][z] + timeStepSizeEuler * v[i][z];	                // Update particle i coordinates in dimension z
-          v[i][z] = v[i][z] + timeStepSizeEuler * forces[i][z] / mass[i];	// Update particle i velocity in dimension z
+          x[i][z] = x[i][z] + timeStepSizeEuler * v[i][z];	              // Update coordinates in dimension z
+          v[i][z] = v[i][z] + timeStepSizeEuler * forces[i][z] / mass[i]; // Update velocity in dimension z
 
-          totalV += v[i][k] * v[i][k];
+          totalV += v[i][z] * v[i][z];
 
         }
 

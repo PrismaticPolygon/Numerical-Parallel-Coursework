@@ -34,18 +34,28 @@ def build_particle_string(num_particles=100, min_mass=1, max_mass=10):
 
 if __name__ == "__main__":
 
-    if not os.path.exists("solution-step2"):        # Compile solution-step3 if it doesn't exist
+    # if not os.path.exists("solution-step3"):        # Compile solution-step3 if it doesn't exist
 
-        subprocess.call(["g++", "-O3", "--std=c++11", "solution-step3.c", "-o", "solution-step3"])
+    subprocess.call(["g++", "-O3", "--std=c++11", "solution-step3.c", "-o", "solution-step3"])
+
+#args = [
+ #   "./solution-step3",                    # Compiled C executable
+  #  "0.01",                                     # tPlotDelta
+   # "1.0",                                       # tFinal
+    #"0.1",                                     # timeStepSize
+    #"0", "0", "0",    "0", "0", "0",    "4",    # [x, y, z], [v_x, v_y, v_z], m
+    #"3", "0", "0",    "0", "0", "0",    "5",    # [x, y, z], [v_x, v_y, v_z], m
+    #"3", "4", "0",    "0", "0", "0",    "3"     # [x, y, z], [v_x, v_y, v_z], m
+	#]
 
     args = [
         "./solution-step3",     # Compiled C executable
-        "0.01",                 # tPlotDelta
-        "10",                   # tFinal
-        "1e-8",                 # timeStepSize
+       "0.01",                 # tPlotDelta
+       "2.0",                   # tFinal
+       "1e-8",                 # timeStepSize
     ]
 
     # Create an argument string (hopefully faster than using a list)
-    string = " ".join(args) + build_particle_string(num_particles=125, min_mass=1, max_mass=10)
-
-    process = subprocess.Popen(string, shell=True)
+string = " ".join(args) + build_particle_string(num_particles=8, min_mass=1, max_mass=10)
+#string = " ".join(args)
+process = subprocess.Popen(string, shell=True)

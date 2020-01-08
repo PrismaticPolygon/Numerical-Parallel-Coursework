@@ -247,13 +247,13 @@ void updateBody() {
   
   for (int i = 0; i < numBuckets; i++) {
   
-	buckets2D = new int[bucketCounts[i]];
+	buckets2D[i] = new int[bucketCounts[i]];
   
   }
 
   for (int i = 0; i < NumberOfBodies; i++) {    // Set the next element of bucket k to i
 
-    int k = buckets1D[i]
+    int k = buckets1D[i];
 
     buckets2D[k][bucketCounts2[i]] = i;
     bucketCounts2[i]++;
@@ -270,11 +270,11 @@ void updateBody() {
 
       for (int a = 0; a < bucketSize - 1; a++) {
 
-        int i = buckets2D[k][a]
+        int i = buckets2D[k][a];
 
         for (int b = a + 1; b < bucketSize; b++) {
 
-          int j == buckets2D[k][b]
+          int j = buckets2D[k][b];
 
           const double distance = sqrt(
             (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
@@ -282,7 +282,7 @@ void updateBody() {
             (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
           );
 
-          minDx = std::min(minDx, distance);
+          minDx = std::min( minDx,distance );
 
           if (distance < diameter) {
 
@@ -299,7 +299,7 @@ void updateBody() {
                 x[c] = x[c+1];					// Co-ordinates
                 mass[c] = mass[c+1];			// Mass
                 v[c] = v[c+1];					// Velocity
-                buckets1D[c] = buckets1D[c+1]   // Probably unnecessary
+                buckets1D[c] = buckets1D[c+1];  // Probably unnecessary
 
             }
 
@@ -333,7 +333,7 @@ void updateBody() {
 
       for (int a = 0; a < bucketSize - 1; a++) {
 
-        int i = buckets2D[k][a]
+        int i = buckets2D[k][a];
         double totalV = 0;
 
         for (int z = 0; z < 3; z++) {

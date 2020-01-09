@@ -38,19 +38,10 @@ def run():
             process = subprocess.Popen(args, stdout=subprocess.PIPE) # https://stackoverflow.com/questions/6657690/python-getoutput-equivalent-in-subprocess
             out = process.communicate()[0].decode("utf-8").split("\n")
 
-            if len(out) >= 2:
+            coordinates = ",".join(out[:-1])
+            file.write(step + "," + coordinates + "\n")
 
-                coordinates = ",".join(out[:-1])
-
-                message = coordinates
-
-                file.write(step + "," + message + "\n")
-
-            else:
-
-                message = "NO COLLISION"
-
-            print("{} ({:.2f}s)".format(message, time.time() - start))
+            print("{} ({:.2f}s)".format(coordinates, time.time() - start))
 
             h = h / 2
 

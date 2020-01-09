@@ -146,10 +146,35 @@ void printParaviewSnapshot() {
   videoFile << "<DataSet timestep=\"" << counter << "\" group=\"\" part=\"0\" file=\"" << filename.str() << "\"/>" << std::endl;
 }
 
+// A large RHS (that is, force) induces fast acceleration, so Euler becomes a poor approximation
+// For these setups, we should reduce the time-step size h
+// Otherwise, we use as large an h as possible.
+// So the larger the velocity, the smaller the timestep we should use.
+// That's currently implemented.
 // New approach. Create our list of buckets, then SORT IT.
 // Nope. It's the indices that we care about.
 // General idea: slow moving particles shouldn't be close to fast ones.
 // Check final lecture for shit on buckets.
+
+// A few, light, fast particles mess up all the time step sizes.
+// Sort all particles into buckets according to their speed.
+// Assign each bucket characteristic time step (h, h / 2, h / 4...
+// And loop over buckets.
+// That's it. Let's not forget this sorting teaser, though.
+
+// A stiff problem is a problem that makes (not unconditionally stable) algorithms
+// such as explicit schemes using extremely small time step sizes / discretisation lengths.
+// Explicit Euler is conditionally stable. We can't say that it IS stable for some h
+// unless we fix delta.
+
+// Sort the objects according to their velocity after every timestep.
+// Easy.
+// It's implied I should be using a sorting algorithm.
+// I have an array of velocities, and so I could sort and slice
+// those.
+// But that is functionally equivalent to what I'm doing at the moment.
+
+// Once we've used maxV to set the buckets, we reset it.
 
 /**
  * This is the only operation you are allowed to change in the assignment.
@@ -158,32 +183,17 @@ void updateBody() {
 
   minDx  		  = std::numeric_limits<double>::max();	// The minimum distance between particles
   forces          = new double*[NumberOfBodies];	    // A 2D array of the forces on each molecule
-  int numBuckets  = 10;									// The number of buckets
+  int numBuckets  = 10;
+  int* buckets    = new int[NumberOfBodies];            // The number of buckets
+  double vBucket  = maxV / (numBuckets - 1);		    // The partition
 
-  for (int i = 0; i < NumberOfBodies; i++) {            // Initialise forces on each particle to 0
+  for (int i = 0; i < NumberOfBodies; i++) {
 	  
-	forces[i] = new double[3]{0.0, 0.0, 0.0};
-	  
-  }
-
-  /*
-  * 1. Make a 1D array, buckets1D. Each i in bucketsID corresponds to particle i. buckets1D[i] is the bucket particle i is in.
-  * 2. Make a 1D array. bucketCounts. The number of particles in each bucket k.
-  * 3. Make a 1D array, bucketCounts2. The number of particles currently in each bucket k.
-  */
-
-  int* buckets1D = new int[NumberOfBodies];  // Each element i of buckets will map to a particle i. The value will be the bucket that particle i belongs to.
-  int* bucketCounts = new int[numBuckets]{0, 0};	 // The number of particles to go in each bucket i
-  int* bucketCounts2 = new int[numBuckets]{0, 0};	 // The number of particles in each bucket i
-
-  double vBucket = maxV / (numBuckets - 1);		// The partition
-
-  for (int i = 0; i < NumberOfBodies; i++) {	// For each particle, calculate which bucket it should go into.
+	forces[i] = new double[3]{0.0, 0.0, 0.0};           // Initialise forces on each particle to 0
 
     if (maxV == 0) {
 
-      buckets1D[i] = 0;
-      bucketCounts[0]++;
+      buckets[i] = 0;
 
     } else {
 
@@ -195,133 +205,79 @@ void updateBody() {
 
       }
 
-      totalV = std::sqrt(totalV);
-	  int bucket = round(totalV / vBucket);	
+      buckets[i] = round(std::sqrt(totalV) / vBucket);
 
-      buckets1D[i] = bucket;
-      bucketCounts[bucket]++;
+      std::cout << "Particle " << i << " in bucket " buckets[i] << std::endl;
 
-  	}
-
+    }
+	  
   }
 
-//  std::cout << "Buckets: ";
-//
-//  for (int i = NumberOfBodies - 1; i >= 0; i--) // Correct.
-//
-//    std::cout << buckets1D[i];
-//
-//  std::cout << std::endl;
-//
-//  std::cout << "Counts: ";
+  std::cout << std::endl;
 
-//  for (int i = 0; i < numBuckets; i++) // Correct.
-//
-//    std::cout << i << ": " << bucketCounts[i] << ", ";
-//
-//  std::cout << std::endl;
-  
-  int** buckets2D = new int*[numBuckets];	// Create a 2D list of buckets using bucketCounts.
-  
-  for (int i = 0; i < numBuckets; i++) {
-  
-	buckets2D[i] = new int[bucketCounts[i]];
-  
-  }
+  for (int k = 0; k < numBuckets; k++) {    // Iterate through buckets
 
-  for (int i = 0; i < NumberOfBodies; i++) {    // Set the current element of bucket k to particle i
-
-    int k = buckets1D[i];
-
-//	std::cout << i << ", " << k << ", " << bucketCounts2[k] << std::endl;
-
-    buckets2D[k][bucketCounts2[k]] = i;
-    bucketCounts2[k]++;
-
-  }
-
-  //for (int i = 0; i < numBuckets; i++) { // 000 as expected.
-
-	//std::cout << "Bucket " << i << ": ";
-
-    //for (int j = bucketCounts[i] - 1; j >= 0; j--) {
-
-		//std::cout << buckets2D[i][j];	// Has two three elements in 0, 0 and 2. NOT 1. Why?
-
-    //}
-
-    //std::cout << std::endl;
-
-  //}
-
-  for (int k = 0; k < numBuckets; k++) {	// Iterate through buckets
-
-    int bucketSize = bucketCounts[k];                           // The number of particles in the bucket
     int timeSteps = pow(2, k);									// The number of timesteps to run bucket k for
 	double timeStepSizeEuler = timeStepSize / timeSteps;        // The size of the timestep for bucket k
 
-//    std::cout << k << ", " << bucketSize << ", " << timeSteps << ", " << timeStepSize << ", " << timeStepSizeEuler << std::endl;
+    for (int i = 0; i < NumberOfBodies; i++) {  // Iterate through particles
 
-	for (int q = 0; q < timeSteps; q++) {
+      if (buckets[i] != k) {   // If it is not in bucket k, skip
 
-      for (int a = 0; a < bucketSize - 1; a++) {
+        continue
 
-        int i = buckets2D[k][a];
+      }
 
-        for (int b = a + 1; b < bucketSize; b++) {
+      for (int j = 0; j < NumberOfBodies; j++) {
 
-          int j = buckets2D[k][b];
+        if (buckets[j] < k || j == i)  {   // If it's in a bucket we've already looked at, or is the current particle, skip
 
-		  std::cout << "(" << i << ", " << j << ")" << std::endl;
+          continue
 
-          const double distance = sqrt(
-            (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
-            (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
-            (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
-          );
+        }
 
-          minDx = std::min( minDx,distance );
+        std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << j << ")" << std::endl;
 
-          if (distance < diameter) {
+        const double distance = sqrt(
+          (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
+          (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
+          (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
+        );
 
-            for (int z = 0; z < 3; z++) {
+        minDx = std::min( minDx,distance );
 
-                v[i][z] = (mass[i] / (mass[i] + mass[j])) * v[i][z] + (mass[j] / (mass[i] + mass[j])) * v[j][z];
+        if (distance < diameter) {
 
-            }
+          std::cout << "Merging particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << j << ")" << std::endl;
 
-            mass[i] += mass[j]; // Merge masses
+          for (int z = 0; z < 3; z++) { // Merge velocities
 
-            for (int c = j; c < NumberOfBodies; c++) {	// Remove particle from global arrays
+            v[i][z] = (mass[i] / (mass[i] + mass[j])) * v[i][z] + (mass[j] / (mass[i] + mass[j])) * v[j][z];
 
-                x[c] = x[c+1];					// Co-ordinates
-                mass[c] = mass[c+1];			// Mass
-                v[c] = v[c+1];					// Velocity
-                buckets1D[c] = buckets1D[c+1];  // Probably unnecessary
+          }
 
-            }
+          mass[i] += mass[j]; // Merge masses
 
-            for (int c = b; c < bucketSize; c++) {	    // Remove particle from bucket array
+          for (int c = j; c < NumberOfBodies; c++) {	// Remove particle from global arrays
 
-                buckets2D[c] = buckets2D[c+1];
+            x[c] = x[c+1];					// Co-ordinates
+            mass[c] = mass[c+1];			// Mass
+            v[c] = v[c+1];					// Velocity
+            buckets[c] = buckets[c+1];      // Buckets
 
-            }
+          }
 
-            NumberOfBodies--;
-            bucketSize--;
-            b--;	// Decrement b as the "old" b has been deleted
+          NumberOfBodies--;
+          j--;	// Decrement b as the "old" b has been deleted
 
+        } else {
 
-          } else {
+          for (int z = 0; z < 3; z++) {
 
-            for (int z = 0; z < 3; z++) {
+              double force = (x[j][z] - x[i][z]) * mass[i] * mass[j] / distance / distance / distance ;
 
-                double force = (x[j][z] - x[i][z]) * mass[i] * mass[j] / distance / distance / distance ;
-
-                forces[i][z] += force;
-                forces[j][z] -= force;
-
-            }
+              forces[i][z] += force;
+              forces[j][z] -= force;
 
           }
 
@@ -329,25 +285,25 @@ void updateBody() {
 
       }
 
-      for (int a = 0; a < bucketSize - 1; a++) {
-
-        int i = buckets2D[k][a];
-        double totalV = 0;
-
-        for (int z = 0; z < 3; z++) {
-
-          x[i][z] = x[i][z] + timeStepSizeEuler * v[i][z];	              // Update coordinates in dimension z
-          v[i][z] = v[i][z] + timeStepSizeEuler * forces[i][z] / mass[i]; // Update velocity in dimension z
-
-          totalV += v[i][z] * v[i][z];
-
-        }
-
-        maxV = std::max(maxV, std::sqrt(totalV));
-
-  	  }
-
     }
+
+  }
+
+  for (int i = 0; i < NumberOfBodies; i++) {	// Update positions and velocity of particles
+
+	double totalV = 0;
+
+	for (int k = 0; k < 3; k++) {
+
+	  x[i][k] = x[i][k] + timeStepSize * v[i][k];	// Update particle i coordinates in dimension k
+
+	  v[i][k] = v[i][k] + timeStepSize * forces[i][k] / mass[i];	// Update particle i velocity in dimension k
+
+	  totalV += v[i][k] * v[i][k];
+
+	}
+
+	maxV = std::max(maxV, std::sqrt(totalV));
 
   }
   

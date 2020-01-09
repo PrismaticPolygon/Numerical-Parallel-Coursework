@@ -113,7 +113,7 @@ void printParaviewSnapshot() {
   static int counter = -1;
   counter++;
   std::stringstream filename;
-  filename << "results/result-" << counter <<  ".vtp";
+  filename << "result-" << counter <<  ".vtp";
   std::ofstream out( filename.str().c_str() );
   out << "<VTKFile type=\"PolyData\" >" << std::endl
       << "<PolyData>" << std::endl
@@ -156,8 +156,6 @@ void updateBody() {
 	  forces[i] = new double[3]{0.0, 0.0, 0.0};
 	  
   }
-
-  // What errors am I supposed to be reducing? It works fine.
   
   // Iterate through the particles, from 0 to 1
   for (int i = 0; i < NumberOfBodies - 1; i++) {

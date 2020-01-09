@@ -7,7 +7,7 @@ if __name__ == "__main__":
     args = [
         "./solution-step1",                 # Compiled C executable
         "0.01",                             # tPlotDelta
-        "10",                               # tFinal
+        "3",                                # tFinal
         "1e-8",                             # timeStepSize
         "0", "0", "0", "0", "0", "0", "4",  # [x, y, z], [v_x, v_y, v_z], m
         "3", "0", "0", "0", "0", "0", "5",  # [x, y, z], [v_x, v_y, v_z], m

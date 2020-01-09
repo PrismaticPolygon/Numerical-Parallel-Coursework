@@ -73,6 +73,14 @@ def distance(row):
         (row["z_1"] - row["z_2"]) ** 2
     )
 
+def difference(a, b):
+
+    return math.sqrt(
+        (a["x_2"] - b["x_2"]) ** 2 +
+        (a["y_2"] - b["y_2"]) ** 2 +
+        (a["z_2"] - b["z_2"]) ** 2
+    )
+
 # We could simply compute the absolute value from the origin.
 # We don't even need to, in fact.
 # Deriving the convergence order of the method.
@@ -83,13 +91,16 @@ def convergence():
 
     df = pd.read_csv("numerical-report.csv")
 
-    distances = list(df.apply(distance, axis=1))  # So this is the distances between collision points.
-    steps = list(df["step"])
+    # This ISN'T what we want. We want the distance between their collision points.
+
+    # distances = list(df.apply(distance, axis=1))  # So this is the distances between collision points.
+    # steps = list(df["step"])
 
     # Ah. We also need timestep, naturally.
 
-    print(distances)
-    print(steps)
+    # print(distances)
+    # print(steps)
+    # Is it a question of too many points? No, that's never the case.
 
     errors = []
     hs = []
@@ -98,23 +109,94 @@ def convergence():
     # And
     # If the convergence order CAN be derived, it's eluding me.
     # This seems a good point to stop.
-    # Actually, I'll have a look into number 5. 
+    # Actually, I'll have a look into number 5.
 
     # Yes.
-    nums = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+    # nums = [1, 2, 4, 8, 16, 32, 64, 128, 256]
 
-    for i in range(len(nums)):
+    # That's more interesting. In fact
+    # Now we can do it with EVERY pair. That's 300(300 - 1) / 2. Definitely possible
+    # Let's do it.
 
-        error = abs(distances[0] - distances[nums[i]])    # Okay.
-        h = (steps[nums[0]] + steps[nums[i]]) / 2
+    # Interesting. Is this what I was expecting?
+    # I'm not sure.
+    # No. In his, every point is on the same line.
+    # I feel I'm just making this up!
+    # At least there's no negative values.
+    # Am I even calculating y properly? Yeah, the only way that's meaningful anyway.
 
-        # But... what do I say the h is?
+    # num = len(df)
+    #
+    # for i in range(num - 1):
+    #
+    #     a = df.iloc[i]
+    #
+    #     for j in range(i, num):
+    #
+    #         b = df.iloc[j]
+    #
+    #         error = difference(a, b)
+    #         h = a["step"]
+    #
+    #         errors.append(error)
+    #         hs.append(h)
+    # That's not right either! It's DIVIDED.
+    # For logarithmic purposes. So how will I get the HALF value? We start with the biggest step.
+
+    # print(df.iloc[0]["step"])   # 1e-6, 5e-7, 2.5e-7, 1.25e7
+
+    # Okay.
+
+    a = df.iloc[0]
+    # i = h / 2
+
+    # I guess a straight line of 0 means it converges to 0...
+    # Or do I choose different values of h?
+    # I'm convinced that must be what I'm supposed to do.
+    # When I did that I got my unholy other graph, however. It's possible that
+    # it's not possible to
+    # That's not right either. Every point we be plotted on h if it were.
+
+    for i in range(1, 333):
+
+        b = df.iloc[i]
+
+        error = difference(a, b)
+        h = b["step"]
 
         errors.append(error)
         hs.append(h)
 
-    print(errors)
-    print(hs)
+
+
+    # while i > df.iloc[-1]["step"]:
+    #
+    #     i = i / 2
+    #
+    #     print(i)
+
+        # I don't have those values! I could fabricate them...
+        # Yeah. Let's do that. And perhaps change our smallest one too.
+
+    # for i in range(9):
+    #
+    #     j = pow(2, i) - 1
+    #
+    #     print(j)
+
+    #     a = df.iloc[nums[0]]
+    #     b = df.iloc[nums[i]]
+    #
+    #     error = difference(a, b)
+    #     h = (steps[nums[0]] + steps[nums[i]]) / 2
+    #
+    #     # But... what do I say the h is?
+    #
+    #     errors.append(error)
+    #     hs.append(h)
+    #
+    # print(errors)
+    # print(hs)
 
     # What the fuck does this mean?
     # I'm MAYBE seeing peaks and troughs.
@@ -148,14 +230,14 @@ def convergence():
     plt.xlim([min(hs), max(hs)])
     plt.ylim([min(errors), max(errors)])
 
-    # plt.title("Order of convergence")
-    # plt.xlabel('h')
-    # plt.ylabel('error |e|')
-    #
-    # plt.tight_layout()
-    #
-    # plt.savefig("convergence.png")
-    #
+    plt.title("Order of convergence")
+    plt.xlabel('h')
+    plt.ylabel('error |e|')
+
+    plt.tight_layout()
+
+    plt.savefig("convergence.png")
+
     plt.show()
 
     # Time stepping for ODEs (ordinary differential equations). We know the equations.

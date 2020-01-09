@@ -220,21 +220,23 @@ void updateBody() {
     int timeSteps = pow(2, k);									// The number of timesteps to run bucket k for
 	double timeStepSizeEuler = timeStepSize / timeSteps;        // The size of the timestep for bucket k
 
-    for (int i = 0; i < NumberOfBodies; i++) {  // Iterate through particles
+    std::cout << "Simulating bucket " << k << " (" << timeSteps << " time steps)" << std::endl;
+
+
+    // Almost. I need to find some way to not compare particles in the same bucket twice.
+    // e.g. (0, 2) and (2, 0).
+    // I can rely on them being sorted. Right?
+    // We don't WANT particles to be recomputed in that way.
+
+    for (int i = 0; i < NumberOfBodies - 1; i++) {  // Iterate through particles
 
       if (buckets[i] != k) {   // If it is not in bucket k, skip
 
-        continue
+        continue;
 
       }
 
-      for (int j = 0; j < NumberOfBodies; j++) {
-
-        if (buckets[j] < k || j == i)  {   // If it's in a bucket we've already looked at, or is the current particle, skip
-
-          continue
-
-        }
+      for (int j = i + 1; j < NumberOfBodies; j++) {
 
         std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << j << ")" << std::endl;
 

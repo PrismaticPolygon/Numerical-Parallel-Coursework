@@ -42,9 +42,12 @@ if __name__ == "__main__":
     args = [
         "./solution-step3",     # Compiled C executable
        "0.01",                  # tPlotDelta
-       "2.0",                   # tFinal
-       "1e-8",                  # timeStepSize
+       "1.01",                   # tFinal
+       "1",                  # timeStepSize
     ]
 
     string = " ".join(args) + build_particle_string(num_particles=8, min_mass=1, max_mass=10)
-    process = subprocess.Popen(string, shell=True)
+    
+#print(string)    
+    
+process = subprocess.Popen(string, shell=True)

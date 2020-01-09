@@ -9,6 +9,7 @@
 #include <math.h>
 #include <limits>
 #include <iomanip>
+#include <vector>
 
 
 double t             = 0;   // Start time.
@@ -78,12 +79,12 @@ void setUp(int argc, char** argv) {
   
   if (tPlotDelta <= 0.0) {
 
-    std::cout << "plotting switched off" << std::endl;
+    //std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
 
   } else {
   
-    std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
+    //std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
   
   }
@@ -148,23 +149,35 @@ void printParaviewSnapshot() {
 
 // New approach. Create our list of buckets, then SORT IT.
 // Nope. It's the indices that we care about.
-// General idea: slow moving particles shouldn't be close to fast ones.
+// General idea: slow moving particles shouldn't be close to fast ones. This is wrong. We're trying to avoid
+// truncation errors for particles with high velocities by limiting how fast they move and updating them at smaller increments.
+// Perhaps I should write it so that they are ALL in the first bucket.
+// That way I don't have to do any of the sorting at the moment. Seems a bit pointless. 
 // Check final lecture for shit on buckets.
+// Come ON, Dom! Think.
+// What is the problem with this solution? It's just crappy in general. It's overcomplex and thus prone to bugs. It's overcomplex
+// by Pythonic standards, not by C. A segfault is a very common error, so we should be able to find it. Should? I have little experience
+// with C so I don't know how to find segfaults.
 
 /**
  * This is the only operation you are allowed to change in the assignment.
  */
 void updateBody() {
 
-  minDx  		  = std::numeric_limits<double>::max();	// The minimum distance between particles
+  minDx  		   = std::numeric_limits<double>::max();	// The minimum distance between particles
   forces          = new double*[NumberOfBodies];	    // A 2D array of the forces on each molecule
-  int numBuckets  = 10;									// The number of buckets
+  int numBuckets  = 3;									// The number of buckets
 
   for (int i = 0; i < NumberOfBodies; i++) {            // Initialise forces on each particle to 0
 	  
 	forces[i] = new double[3]{0.0, 0.0, 0.0};
 	  
   }
+  
+  // It shouldn't be the case the these guys can only operate on particles in their own bucket either, hence the sorting. 
+  // And it follows that I don't actually need some of my data structures.
+  // Right? Where did my brainwave just go?
+  // Am I allowed to use other libraries? Is vector a standard libray?
 
   /*
   * 1. Make a 1D array, buckets1D. Each i in bucketsID corresponds to particle i. buckets1D[i] is the bucket particle i is in.
@@ -174,7 +187,7 @@ void updateBody() {
 
   int* buckets1D = new int[NumberOfBodies];  // Each element i of buckets will map to a particle i. The value will be the bucket that particle i belongs to.
   int* bucketCounts = new int[numBuckets]{0, 0};	 // The number of particles to go in each bucket i
-  int* bucketCounts2 = new int[numBuckets]{0, 0};	 // The number of particles in each bucket i
+  int* bucketCounts2 = new int[numBuckets]{0, 0};	 // The number of particles currently in each bucket i
 
   double vBucket = maxV / (numBuckets - 1);		// The partition
 
@@ -195,64 +208,78 @@ void updateBody() {
 
       }
 
-      totalV = std::sqrt(totalV);
-	  int bucket = round(totalV / vBucket);	
+	   int bucket = round(std::sqrt(totalV) / vBucket);	
 
-      buckets1D[i] = bucket;
-      bucketCounts[bucket]++;
+      buckets1D[i] = bucket;	// Particle i goes in bucket
+      bucketCounts[bucket]++;	// bucket should have 1 more particle in.
 
   	}
+  	
+  	// So that's wrong on the first iteration.
+  	// No it isn't. We're saying that every 
+  	// Yes it is.
 
   }
+  
+  maxV = 0.0;	// Reset maxV for next time around
 
-//  std::cout << "Buckets: ";
-//
-//  for (int i = NumberOfBodies - 1; i >= 0; i--) // Correct.
-//
-//    std::cout << buckets1D[i];
-//
-//  std::cout << std::endl;
-//
-//  std::cout << "Counts: ";
+  std::cout << "buckets1D: ";	// Every particle is in bucket 0, as expected.
 
-//  for (int i = 0; i < numBuckets; i++) // Correct.
+  for (int i = NumberOfBodies - 1; i >= 0; i--) { // Correct.
+
+    std::cout << buckets1D[i] << " ";
+    
+ }
+
+ std::cout << std::endl;
 //
-//    std::cout << i << ": " << bucketCounts[i] << ", ";
-//
-//  std::cout << std::endl;
+  std::cout << "bucketCounts: ";
+
+  for (int i = 0; i < numBuckets; i++) // Correct.
+
+    std::cout << i << ": " << bucketCounts[i] << ", ";
+
+  std::cout << std::endl;
   
   int** buckets2D = new int*[numBuckets];	// Create a 2D list of buckets using bucketCounts.
   
   for (int i = 0; i < numBuckets; i++) {
   
-	buckets2D[i] = new int[bucketCounts[i]];
+	buckets2D[i] = new int[bucketCounts[i]];	// Set the size of each to the number of particles that should go into it.
   
   }
 
   for (int i = 0; i < NumberOfBodies; i++) {    // Set the current element of bucket k to particle i
 
-    int k = buckets1D[i];
+    int k = buckets1D[i];	// Get the bucket of the particle
 
-//	std::cout << i << ", " << k << ", " << bucketCounts2[k] << std::endl;
+    int* bucket = buckets2D[k];	// The bucket k that particle i belongs to
+    int cur = bucketCounts2[k];  // The current number of particles in bucket k
 
-    buckets2D[k][bucketCounts2[k]] = i;
-    bucketCounts2[k]++;
+	std::cout << "Particle " << i << " placed in bucket " << k << " at " << cur << std::endl;
+    
+
+    bucket[cur] = i;	// Put particle i in bucket k
+    bucketCounts2[k]++;				// Increment the number of particles in bucket k
 
   }
+  
+  // This
+  // Instant seg fault. Perhaps if my stuff were better... 
 
-  //for (int i = 0; i < numBuckets; i++) { // 000 as expected.
+  for (int i = 0; i < numBuckets; i++) { // 000 as expected. Yeah, this is wrong.
 
-	//std::cout << "Bucket " << i << ": ";
+	std::cout << "Bucket " << i << ": ";
 
-    //for (int j = bucketCounts[i] - 1; j >= 0; j--) {
+    for (int j = 0; j < bucketCounts[i]; j++) { // This should be the element of each.
 
-		//std::cout << buckets2D[i][j];	// Has two three elements in 0, 0 and 2. NOT 1. Why?
+		std::cout << buckets2D[i][j] << " ";	// Has two three elements in 0, 0 and 2. NOT 1. Why?
 
-    //}
+    }
 
-    //std::cout << std::endl;
+    std::cout << std::endl;
 
-  //}
+  }
 
   for (int k = 0; k < numBuckets; k++) {	// Iterate through buckets
 
@@ -260,7 +287,7 @@ void updateBody() {
     int timeSteps = pow(2, k);									// The number of timesteps to run bucket k for
 	double timeStepSizeEuler = timeStepSize / timeSteps;        // The size of the timestep for bucket k
 
-//    std::cout << k << ", " << bucketSize << ", " << timeSteps << ", " << timeStepSize << ", " << timeStepSizeEuler << std::endl;
+    std::cout << k << ", " << bucketSize << ", " << timeSteps << ", " << timeStepSize << ", " << timeStepSizeEuler << std::endl;
 
 	for (int q = 0; q < timeSteps; q++) {
 
@@ -283,6 +310,8 @@ void updateBody() {
           minDx = std::min( minDx,distance );
 
           if (distance < diameter) {
+          	
+          	std::cout << "Merging" << std::endl;
 
             for (int z = 0; z < 3; z++) {
 
@@ -343,13 +372,15 @@ void updateBody() {
 
         }
 
-        maxV = std::max(maxV, std::sqrt(totalV));
+        maxV = std::max( maxV,std::sqrt(totalV) );
 
   	  }
 
     }
 
   }
+  
+  std::cout << "NumberOfBodies: " << NumberOfBodies << std::endl;  
   
   if (NumberOfBodies == 1) {	// Terminate
 	  
@@ -415,13 +446,13 @@ int main(int argc, char** argv) {
     if (t >= tPlot) {
     	
       printParaviewSnapshot();
-      std::cout << "plot next snapshot"
-    		    << ",\t time step=" << timeStepCounter
-    		    << ",\t t="         << t
-				<< ",\t dt="        << timeStepSize
-				<< ",\t v_max="     << maxV
-				<< ",\t dx_min="    << minDx
-				<< std::endl;
+      //std::cout << "plot next snapshot"
+    	//	    << ",\t time step=" << timeStepCounter
+    	std::cout   << "t="         << t;
+		//		<< ",\t dt="        << timeStepSize
+		//		<< ",\t v_max="     << maxV
+		//		<< ",\t dx_min="    << minDx
+		//		<< std::endl;
 
       tPlot += tPlotDelta;
     }

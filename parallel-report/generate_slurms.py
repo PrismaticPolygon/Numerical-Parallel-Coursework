@@ -1,4 +1,4 @@
-from random import random
+import random
 
 # Strong scaling: test with identical parameters but a different number of threads
 # Weak scaling: test with different parameters AND different number of threads
@@ -16,6 +16,7 @@ template = """#!/bin/csh
 #SBATCH --mail-type=ALL
 source /etc/profile.d/modules.sh
 module load intel/xe_2017.2
+export OMP_NUM THREADS=24
 ./a.out {}"""
 
 threads = [1, 2, 4, 8, 12, 16, 20, 24]
@@ -25,6 +26,8 @@ args = [
        "1e-7",                  # timeStepSize
 ]
 num_particles = 500
+
+random.seed(0)
 
 def build_particle_string(num_particles, min_mass=1, max_mass=10):
 
@@ -38,15 +41,17 @@ def build_particle_string(num_particles, min_mass=1, max_mass=10):
 
             for z in range(0, particles_per_axis):
 
-                x_pos = (random() - 0.5) * 0.9 * h + x * h
-                y_pos = (random() - 0.5) * 0.9 * h + y * h
-                z_pos = (random() - 0.5) * 0.9 * h + z * h
+                x_pos = (random.random() - 0.5) * 0.9 * h + x * h
+                y_pos = (random.random() - 0.5) * 0.9 * h + y * h
+                z_pos = (random.random() - 0.5) * 0.9 * h + z * h
 
-                mass = random() * (max_mass - min_mass) + min_mass
+                mass = random.random() * (max_mass - min_mass) + min_mass
 
                 string += " {} {} {} 0 0 0 {}".format(x_pos, y_pos, z_pos, mass)
 
     return string
+
+# It seems that we can BATCH a bunch of different jobs. It
 
 for i, thread in enumerate(threads):
 

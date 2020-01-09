@@ -1,9 +1,8 @@
 import subprocess
 from random import random
 
-def build_particle_string(num_particles=100, min_mass=1, max_mass=10):
+def build_particle_string(particles_per_axis=4, min_mass=1, max_mass=10):
 
-    particles_per_axis = int(num_particles ** (1.0 / 3.0))
     string = ""
     h = 1.0
 
@@ -42,11 +41,11 @@ if __name__ == "__main__":
     args = [
         "./solution-step3",     # Compiled C executable
        "0.01",                  # tPlotDelta
-       "10",                   # tFinal
+       "20",                    # tFinal
        "1e-7",                  # timeStepSize
     ]
 
-    string = " ".join(args) + build_particle_string(num_particles=8, min_mass=1, max_mass=10)
+    string = " ".join(args) + build_particle_string(particles_per_axis=4, min_mass=1, max_mass=10)
     
 #print(string)    
     

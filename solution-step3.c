@@ -207,7 +207,7 @@ void updateBody() {
 
       buckets[i] = round(std::sqrt(totalV) / vBucket);
 
-      std::cout << "Particle " << i << " in bucket " buckets[i] << std::endl;
+      std::cout << "Particle " << i << " in bucket " << buckets[i] << std::endl;
 
     }
 	  
@@ -224,7 +224,7 @@ void updateBody() {
 
       if (buckets[i] != k) {   // If it is not in bucket k, skip
 
-        continue
+        continue;
 
       }
 
@@ -232,11 +232,11 @@ void updateBody() {
 
         if (buckets[j] < k || j == i)  {   // If it's in a bucket we've already looked at, or is the current particle, skip
 
-          continue
+          continue;
 
         }
 
-        std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << j << ")" << std::endl;
+        std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
         const double distance = sqrt(
           (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
@@ -248,7 +248,7 @@ void updateBody() {
 
         if (distance < diameter) {
 
-          std::cout << "Merging particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << j << ")" << std::endl;
+          std::cout << "Merging particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
           for (int z = 0; z < 3; z++) { // Merge velocities
 

@@ -160,7 +160,7 @@ void printParaviewSnapshot() {
   static int counter = -1;
   counter++;
   std::stringstream filename;
-  filename << "results/result-" << counter <<  ".vtp";
+  filename << "result-" << counter <<  ".vtp";
   std::ofstream out( filename.str().c_str() );
   out << "<VTKFile type=\"PolyData\" >" << std::endl
       << "<PolyData>" << std::endl

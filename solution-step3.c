@@ -119,7 +119,7 @@ void printParaviewSnapshot() {
   static int counter = -1;
   counter++;
   std::stringstream filename;
-  filename << "results/result-" << counter <<  ".vtp";
+  filename << "result-" << counter <<  ".vtp";
   std::ofstream out( filename.str().c_str() );
   out << "<VTKFile type=\"PolyData\" >" << std::endl
       << "<PolyData>" << std::endl
@@ -146,50 +146,21 @@ void printParaviewSnapshot() {
   videoFile << "<DataSet timestep=\"" << counter << "\" group=\"\" part=\"0\" file=\"" << filename.str() << "\"/>" << std::endl;
 }
 
-// A large RHS (that is, force) induces fast acceleration, so Euler becomes a poor approximation
-// For these setups, we should reduce the time-step size h
-// Otherwise, we use as large an h as possible.
-// So the larger the velocity, the smaller the timestep we should use.
-// That's currently implemented.
-// New approach. Create our list of buckets, then SORT IT.
-// Nope. It's the indices that we care about.
-// General idea: slow moving particles shouldn't be close to fast ones.
-// Check final lecture for shit on buckets.
-
-// A few, light, fast particles mess up all the time step sizes.
-// Sort all particles into buckets according to their speed.
-// Assign each bucket characteristic time step (h, h / 2, h / 4...
-// And loop over buckets.
-// That's it. Let's not forget this sorting teaser, though.
-
-// A stiff problem is a problem that makes (not unconditionally stable) algorithms
-// such as explicit schemes using extremely small time step sizes / discretisation lengths.
-// Explicit Euler is conditionally stable. We can't say that it IS stable for some h
-// unless we fix delta.
-
-// Sort the objects according to their velocity after every timestep.
-// Easy.
-// It's implied I should be using a sorting algorithm.
-// I have an array of velocities, and so I could sort and slice
-// those.
-// But that is functionally equivalent to what I'm doing at the moment.
-
-// Once we've used maxV to set the buckets, we reset it.
-
 /**
  * This is the only operation you are allowed to change in the assignment.
  */
 void updateBody() {
 
-  minDx  		  = std::numeric_limits<double>::max();	// The minimum distance between particles
-  forces          = new double*[NumberOfBodies];	    // A 2D array of the forces on each molecule
+  maxV            = 0.0;	                              // The highest velocity
+  minDx  		   = std::numeric_limits<double>::max();	// The minimum distance between particles
+  forces          = new double*[NumberOfBodies];	      // A 2D array of the forces on each molecule
   int numBuckets  = 10;
-  int* buckets    = new int[NumberOfBodies];            // The number of buckets
-  double vBucket  = maxV / (numBuckets - 1);		    // The partition
+  int* buckets    = new int[NumberOfBodies];             // The number of buckets
+  double vBucket  = maxV / (numBuckets - 1);		         // The partition
 
   for (int i = 0; i < NumberOfBodies; i++) {
 	  
-	forces[i] = new double[3]{0.0, 0.0, 0.0};           // Initialise forces on each particle to 0
+	forces[i] = new double[3]{0.0, 0.0, 0.0};             // Initialise forces on each particle to 0
 
     if (maxV == 0) {
 
@@ -207,26 +178,21 @@ void updateBody() {
 
       buckets[i] = round(std::sqrt(totalV) / vBucket);
 
-      std::cout << "Particle " << i << " in bucket " << buckets[i] << std::endl;
+      //std::cout << "Particle " << i << " in bucket " << buckets[i] << std::endl;
 
     }
 	  
   }
 
-  std::cout << std::endl;
+  //std::cout << std::endl;
 
   for (int k = 0; k < numBuckets; k++) {    // Iterate through buckets
 
     int timeSteps = pow(2, k);									// The number of timesteps to run bucket k for
 	double timeStepSizeEuler = timeStepSize / timeSteps;        // The size of the timestep for bucket k
 
-    std::cout << "Simulating bucket " << k << " (" << timeSteps << " time steps)" << std::endl;
+    //std::cout << "Simulating bucket " << k << " (" << timeSteps << " time steps)" << std::endl;
 
-
-    // Almost. I need to find some way to not compare particles in the same bucket twice.
-    // e.g. (0, 2) and (2, 0).
-    // I can rely on them being sorted. Right?
-    // We don't WANT particles to be recomputed in that way.
 
     for (int i = 0; i < NumberOfBodies - 1; i++) {  // Iterate through particles
 
@@ -238,7 +204,7 @@ void updateBody() {
 
       for (int j = i + 1; j < NumberOfBodies; j++) {
 
-        std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
+        //std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
         const double distance = sqrt(
           (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
@@ -250,7 +216,7 @@ void updateBody() {
 
         if (distance < diameter) {
 
-          std::cout << "Merging particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
+          //std::cout << "Merging particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
           for (int z = 0; z < 3; z++) { // Merge velocities
 

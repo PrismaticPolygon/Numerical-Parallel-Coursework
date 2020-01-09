@@ -5,7 +5,14 @@ import math
 import pandas as pd
 import numpy as np
 from scipy import optimize
+from decimal import Decimal
 import matplotlib.pyplot as plt
+
+from matplotlib import rc
+
+# I could probably merge these two. Let's do that later, though.
+
+rc("text", usetex="True")   # Use LaTeX text rendering
 
 args = [
     "./numerical-report",                       # Compiled C executable
@@ -57,21 +64,33 @@ def test_func(h, C, p):
 
     return (C * (h ** p)) - (C * ((h/2) ** p))
 
+def format_func(value, tick_number):
+
+    float_str = "{0:.2g}".format(value)
+
+    if "e" in float_str:
+        base, exponent = float_str.split("e")
+        return r"${0} \times 10^{{{1}}}$".format(base, int(exponent))
+    else:
+
+        return float_str
+
 def plot():
 
     df = pd.read_csv("convergence.csv")
 
+    plt.figure(figsize=(6, 3))  # Default is (6, 4)
+
     distances = []
     timesteps = []
 
-    a = df.iloc[0] # Largest timestep: 7.3e-6.
-
     for i in range(1, len(df)):
 
-        b = df.iloc[i]
+        y_h = df.iloc[i - 1]
+        y_h_2 = df.iloc[i]
 
-        distance = difference(a, b)
-        h = b["step"]
+        distance = difference(y_h, y_h_2)
+        h = y_h["step"]
 
         distances.append(distance)
         timesteps.append(h)
@@ -79,25 +98,29 @@ def plot():
     timesteps = np.array(timesteps)
     distances = np.array(distances)
 
-    plt.scatter(timesteps, distances, label="Data")
+    plt.scatter(timesteps, distances, label="Data", alpha=0.5)
 
     params, params_covariance = optimize.curve_fit(test_func, timesteps, distances)
 
     print("C:", params[0])
     print("p:", params[1])
 
-    plt.plot(timesteps, test_func(timesteps, params[0], params[1]), label='Fitted function')
+    plt.plot(timesteps, test_func(timesteps, params[0], params[1]), label='Fitted function', color="red")
 
     plt.xlim([min(timesteps), max(timesteps)])
     plt.ylim([min(distances), max(distances)])
 
+    axes = plt.gca()
+
+    axes.xaxis.set_major_formatter(plt.FuncFormatter(format_func))
+
     plt.legend(loc='best')
 
-    plt.title("Order of convergence")
-    plt.xlabel('Timestep h')
-    plt.ylabel('Distance between second collision points |d|')
+    plt.title(r"Calculating the order of convergence")
+    plt.xlabel(r'Timestep $h$')
+    plt.ylabel(r'Collision distance $|d|$')
 
-    plt.tight_layout()
+    plt.tight_layout(pad=0.8)
 
     plt.savefig("convergence.png")
 
@@ -106,7 +129,7 @@ def plot():
 
 if __name__ == "__main__":
 
-    subprocess.call(["g++", "-O3", "--std=c++11", "numerical-report.c", "-o", "numerical-report"])
+    subprocess.call(["g++", "-O3", "--std=c++11", "report.c", "-o", "report"])
 
     if not os.path.exists("convergence.csv"):    # Run convergence if no output exists
 

@@ -156,6 +156,8 @@ void updateBody() {
 	  forces[i] = new double[3]{0.0, 0.0, 0.0};
 	  
   }
+
+  // What errors am I supposed to be reducing? It works fine.
   
   // Iterate through the particles, from 0 to 1
   for (int i = 0; i < NumberOfBodies - 1; i++) {

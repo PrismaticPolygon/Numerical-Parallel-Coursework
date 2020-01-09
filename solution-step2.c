@@ -247,7 +247,7 @@ void updateBody() {
 		
 			  for (int k = 0; k < 3; k++) {
 			  
-				  double force = (x[j][k]-x[i][k]) * mass[i] * mass[j] / distance / distance / distance ;
+				  double force = (x[j][k] - x[i][k]) * mass[i] * mass[j] / distance / distance / distance ;
 				
 				  forces[i][k] += force;
 				  forces[j][k] -= force;

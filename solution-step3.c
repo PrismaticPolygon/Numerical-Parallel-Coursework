@@ -148,6 +148,8 @@ void printParaviewSnapshot() {
 
 // New approach. Create our list of buckets, then SORT IT.
 // Nope. It's the indices that we care about.
+// General idea: slow moving particles shouldn't be close to fast ones.
+// Check final lecture for shit on buckets.
 
 /**
  * This is the only operation you are allowed to change in the assignment.

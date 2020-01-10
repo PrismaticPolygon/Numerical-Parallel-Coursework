@@ -23,11 +23,7 @@
 #include <limits>
 #include <iomanip>
 #include <omp.h>
-#include <chrono>
 
-using namespace std::chrono;
-
-auto start = high_resolution_clock::now();
 
 double t          = 0;
 double tFinal     = 0;
@@ -108,14 +104,14 @@ void setUp(int argc, char** argv) {
     }
   }
 
-  // std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
+  std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
 
   if (tPlotDelta<=0.0) {
-    // std::cout << "plotting switched off" << std::endl;
+    std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
   }
   else {
-    // std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
+    std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
   }
 }
@@ -128,11 +124,6 @@ std::ofstream videoFile;
  * This operation is not to be changed in the assignment.
  */
 void openParaviewVideoFile() {
-
-// Ah. Has to be a in parallel region.
-// Interesting. 
-// I'll want two different files: one that generates my stuff and the other for submission, like the last time.
-
   videoFile.open( "result.pvd" );
   videoFile << "<?xml version=\"1.0\"?>" << std::endl
             << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">" << std::endl
@@ -252,6 +243,7 @@ void updateBody() {
 
 	  double totalV = 0;
 
+      //#pragma omp parallel for reduction(+: totalV) // Might not work
 	  for (int k = 0; k < 3; k++) {
 
 		  x[i][k] = x[i][k] + timeStepSize * v[i][k];                // Update particle i coordinates in dimension k
@@ -325,24 +317,19 @@ int main(int argc, char** argv) {
     timeStepCounter++;
     if (t >= tPlot) {
       printParaviewSnapshot();
-      //std::cout << "plot next snapshot"
-    	//	    << ",\t time step=" << timeStepCounter
-    		//    << ",\t t="         << t
-				//<< ",\t dt="        << timeStepSize
-				//<< ",\t v_max="     << maxV
-				//<< ",\t dx_min="    << minDx
-				//<< std::endl;
+      std::cout << "plot next snapshot"
+    		    << ",\t time step=" << timeStepCounter
+    		    << ",\t t="         << t
+				<< ",\t dt="        << timeStepSize
+				<< ",\t v_max="     << maxV
+				<< ",\t dx_min="    << minDx
+				<< std::endl;
 
       tPlot += tPlotDelta;
     }
   }
 
   closeParaviewVideoFile();
-
-  auto stop = high_resolution_clock::now();
-
-  auto duration = duration_cast<microseconds>(stop - start);
-  std::cout << duration.count() << std::endl;
 
   return 0;
 }

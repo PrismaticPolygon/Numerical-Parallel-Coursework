@@ -191,7 +191,7 @@ void updateBody() {
   #pragma omp parallel for
   for (int i = 0; i < NumberOfBodies; i++) {
 
-     // std::cout << "Particle " << i << " handled by thread: " << omp_get_thread_num() << std::endl;
+     std::cout << "Particle " << i << " handled by thread: " << omp_get_thread_num() << std::endl;
 
 	 forces[i] = new double[3]{0.0, 0.0, 0.0};
 

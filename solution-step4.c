@@ -204,7 +204,7 @@ void updateBody() {
   // http://www.bowdoin.edu/~ltoma/teaching/cs3225-GIS/fall17/Lectures/openmp.html
   // http://pages.tacc.utexas.edu/~eijkhout/pcse/html/omp-loop.html#Collapsingnestedloops
   // http://www.techdarting.com/2013/06/openmp-min-max-reduction-code.html
-  #pragma omp parallel for collapse(2) reduction(min:minDx) private(distance, force, k)
+  #pragma omp parallel for collapse(2) reduction(min:minDx)
   for (int i = 0; i < NumberOfBodies - 1; i++) {
 
 	  // Iterate through the particles, from i to n
@@ -236,7 +236,7 @@ void updateBody() {
 
   }
 
-  #pragma omp parallel for reduction(max:maxV) private(totalV)
+  #pragma omp parallel for reduction(max:maxV)
   for (int i = 0; i < NumberOfBodies; i++) {
 
 	  double totalV = 0;

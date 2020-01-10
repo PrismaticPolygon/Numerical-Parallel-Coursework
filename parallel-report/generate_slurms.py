@@ -27,6 +27,8 @@ args = [
 ]
 num_particles = 500
 
+# Now I have several things that I need to do.
+
 random.seed(0)
 
 def build_particle_string(num_particles, min_mass=1, max_mass=10):

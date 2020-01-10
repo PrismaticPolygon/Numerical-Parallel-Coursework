@@ -1,7 +1,7 @@
 #!/bin/sh
-#SBATCH --job-name="step4"
-#SBATCH -o step4.%A.out
-#SBATCH -e step4.%A.err
+#SBATCH --job-name="solution-step4"
+#SBATCH -o solution-step4.%A.out
+#SBATCH -e solution-step4.%A.err
 #SBATCH -p test.q
 #SBATCH -t 00:010:00
 #SBATCH --nodes=1
@@ -11,4 +11,4 @@
 source /etc/profile.d/modules.sh
 export OMP_NUM_THREADS=4
 module load intel/xe_2017.2
-./step4 0.01 10.0 1e-7 0 0 0 0 0 0 4 3 0 0 0 0 0 5 3 4 0 0 0 0 3
+./solution-step4 0.01 10.0 1e-7 0 0 0 0 0 0 4 3 0 0 0 0 0 5 3 4 0 0 0 0 3

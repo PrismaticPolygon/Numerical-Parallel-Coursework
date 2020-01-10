@@ -2,19 +2,7 @@
 //
 // icpc -O3 -fopenmp --std=c++11 solution-step4.c -o solution-step4
 //
-//
-// There should be a result.pvd file that you can open with Paraview.
-// Sometimes, Paraview requires to select the representation "Point Gaussian"
-// to see something meaningful.
-//
 // (C) 2018-2019 Tobias Weinzierl
-
-/*
- * All objects should move freely through space. Ensure that the global statistics
- * (minimal distance between all objects and maximum velocity) are still computed correctly
- * Marks are given for correctness and efficiency (try to spot redundant computations).
- * Worth 25 marks.
- */
 
 #include <fstream>
 #include <sstream>
@@ -24,6 +12,11 @@
 #include <limits>
 #include <iomanip>
 #include <omp.h>
+//#include <chrono>
+
+//using namespace std::chrono;
+
+//auto start = high_resolution_clock::now();
 
 
 double t          = 0;
@@ -73,6 +66,7 @@ double   minDx;
  * This operation is not to be changed in the assignment.
  */
 void setUp(int argc, char** argv) {
+
   NumberOfBodies = (argc-4) / 7;
 
   x    = new double*[NumberOfBodies];
@@ -100,21 +94,28 @@ void setUp(int argc, char** argv) {
     mass[i] = std::stof(argv[readArgument]); readArgument++;
 
     if (mass[i]<=0.0 ) {
+
       std::cerr << "invalid mass for body " << i << std::endl;
       exit(-2);
+
     }
+
   }
 
   std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
 
   if (tPlotDelta<=0.0) {
+
     std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
-  }
-  else {
+
+  } else {
+
     std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
+
   }
+
 }
 
 
@@ -180,22 +181,6 @@ void printParaviewSnapshot() {
   videoFile << "<DataSet timestep=\"" << counter << "\" group=\"\" part=\"0\" file=\"" << filename.str() << "\"/>" << std::endl;
 }
 
-// We can specify variables as private, so each thread has its own copy.
-// By default, loop iteration counters are private, but ALL OTHER VARIABLES ARE SHARED.
-
-// We could set the number of threads internally. Interesting.
-// Once this is working, THEN I can test it.
-// Different kinds of loop scheduling: static (each is assigned a chunk of iterations, round-robin style. Default.
-// Dynamic: each thread is initialised with a chunk of threads
-// Guided: iterations are divided into peices that successively decrease exponentially, with chunk being the smallest size
-// (so what's the largest)?
-// #pragma omp for schedule(static, 5).
-
-// Values of the loop control expressions must be the same for all iterations of the loop.
-// This likely means that we CAN'T parallelise the second inner loop, as we decrement j on merge.
-// Actually, that's for step 2, and this is the parallelised version of step 1, so we're fine.
-// It is only possible to collapse perfectly nested loops.
-
 /**
  * This is the only operation you are allowed to change in the assignment.
  */
@@ -214,20 +199,12 @@ void updateBody() {
 
   }
 
-  // OpenMP is a multi-threading, shared address model. Threads communicate by sharing variables.
-  // Unintended sharing of data causes race conditions. To control race conditions, use synchronisation
-  // to protect data conflicts. This is expensive, so change how data is accessed to minimise the need for synchronisation
-  // Fork-Join Parallelism
-  // It's finally running! Took about three hours, mind you.
-  // This is a ridiculously inefficient workflow.
-  // Oh well.
-
   // Iterate through the particles, from 0 to n - 1
-  // Loop iteration counters are private by default; all other variables are shared.
+  // Loop iteration counters are private by default; distance, force, and k are not.
   // http://www.bowdoin.edu/~ltoma/teaching/cs3225-GIS/fall17/Lectures/openmp.html
   // http://pages.tacc.utexas.edu/~eijkhout/pcse/html/omp-loop.html#Collapsingnestedloops
   // http://www.techdarting.com/2013/06/openmp-min-max-reduction-code.html
-  #pragma omp parallel for collapse(2) reduction(min:minDx)
+  #pragma omp parallel for collapse(2) reduction(min:minDx) private(distance, force, k)
   for (int i = 0; i < NumberOfBodies - 1; i++) {
 
 	  // Iterate through the particles, from i to n
@@ -240,14 +217,18 @@ void updateBody() {
             (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
 		  );
 
-		  for (int k = 0; k < 3; k++) { // Not worth parallelising
+		  if (distance != 0) { // Just in case
 
-			  double force = (x[j][k] - x[i][k]) * mass[i] * mass[j] / distance / distance / distance ;
+		    for (int k = 0; k < 3; k++) { // Not worth parallelising
 
-			  forces[i][k] += force;
-			  forces[j][k] -= force;
+			    double force = (x[j][k] - x[i][k]) * mass[i] * mass[j] / distance / distance / distance ;
 
-		  }
+			    forces[i][k] += force;
+			    forces[j][k] -= force;
+
+		    }
+
+          }
 
 		  minDx = std::min( minDx,distance );
 
@@ -255,7 +236,7 @@ void updateBody() {
 
   }
 
-  #pragma omp parallel for reduction(max:maxV)
+  #pragma omp parallel for reduction(max:maxV) private(totalV)
   for (int i = 0; i < NumberOfBodies; i++) {
 
 	  double totalV = 0;
@@ -269,9 +250,7 @@ void updateBody() {
 
 	  }
 
-	  totalV = sqrt(totalV);
-
-	  maxV = std::max( maxV,totalV );
+	  maxV = std::max( maxV,sqrt(totalV) );
 
   }
 
@@ -340,6 +319,11 @@ int main(int argc, char** argv) {
   }
 
   closeParaviewVideoFile();
+
+  //auto stop = high_resolution_clock::now();
+
+  //auto duration = duration_cast<microseconds>(stop - start);
+  //std::cout << duration.count() << std::endl;
 
   return 0;
 }

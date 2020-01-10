@@ -1,6 +1,6 @@
 // Translate this file with
 //
-// g++ -O3 --std=c++11 solution-step1.c -o solution-step1
+// icpc -O3 -fopenmp --std=c++11 solution-step4.c -o solution-step4
 //
 //
 // There should be a result.pvd file that you can open with Paraview.
@@ -23,6 +23,7 @@
 #include <math.h>
 #include <limits>
 #include <iomanip>
+#include <omp.h>
 
 
 double t          = 0;

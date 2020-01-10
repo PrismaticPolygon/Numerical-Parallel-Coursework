@@ -1,13 +1,15 @@
-#!/bin/csh
+#!/bin/sh
 #SBATCH --job-name="solution-step4"
 #SBATCH -o solution-step4.%A.out
 #SBATCH -e solution-step4.%A.err
+#SBATCH --exclusive
 #SBATCH -p par7.q
 #SBATCH -t 00:05:00
-#SBATCH --exclusive
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=24
 #SBATCH --mail-user=ffgt86@durham.ac.uk
 #SBATCH --mail-type=ALL
+source /etc/profile.d/modules.sh
+export OMP_NUM_THREADS=24
 module load intel/xe_2017.2
-./a.out 0.01 100.0 1e-8 0 0 0 0 0 0 4 3 0 0 0 0 0 5 3 4 0 0 0 0 3
+./solution-step4 0.01 100.0 1e-8 0 0 0 0 0 0 4 3 0 0 0 0 0 5 3 4 0 0 0 0 3

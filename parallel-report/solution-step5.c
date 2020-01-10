@@ -1,6 +1,6 @@
 // Translate this file with
 //
-// icpc -O3 -fopenmp --std=c++11 solution-step4.c -o solution-step4
+// icpc -O3 -fopenmp --std=c++11 solution-step5.c -o solution-step5
 //
 // (C) 2018-2019 Tobias Weinzierl
 
@@ -17,6 +17,7 @@
 using namespace std::chrono;
 
 auto start = high_resolution_clock::now();
+
 
 double t          = 0;
 double tFinal     = 0;
@@ -102,19 +103,20 @@ void setUp(int argc, char** argv) {
 
   }
 
-  // std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
+  std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
 
   if (tPlotDelta<=0.0) {
 
-    // std::cout << "plotting switched off" << std::endl;
+    //std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
 
   } else {
 
-    // std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
+    //std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
 
   }
+
 }
 
 
@@ -125,12 +127,15 @@ std::ofstream videoFile;
  * This operation is not to be changed in the assignment.
  */
 void openParaviewVideoFile() {
-
   videoFile.open( "result.pvd" );
   videoFile << "<?xml version=\"1.0\"?>" << std::endl
             << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">" << std::endl
             << "<Collection>";
 }
+
+
+
+
 
 /**
  * This operation is not to be changed in the assignment.
@@ -139,6 +144,7 @@ void closeParaviewVideoFile() {
   videoFile << "</Collection>"
             << "</VTKFile>" << std::endl;
 }
+
 
 /**
  * The file format is documented at http://www.vtk.org/wp-content/uploads/2015/04/file-formats.pdf
@@ -194,59 +200,67 @@ void updateBody() {
 
   }
 
-  // Iterate through the particles, from 0 to n - 1
-  // i and j are implicitly private; distance, force, and k are not
-  // http://pages.tacc.utexas.edu/~eijkhout/pcse/html/omp-loop.html#Collapsingnestedloops
-  // http://www.techdarting.com/2013/06/openmp-min-max-reduction-code.html
-  #pragma omp parallel for collapse(2) reduction(min:minDx) private(distance, force, k)
-  for (int i = 0; i < NumberOfBodies - 1; i++) {
+  #pragma omp parallel for reduction(min:minDx)
+  for (int k = 0; k < NumberOfBodies * (NumberOfBodies - 1) / 2; k++) {
 
-	  // Iterate through the particles, from i to n
-	  for (int j = i + 1;  j < NumberOfBodies; j++) {
+	size_t i = k / NumberOfBodies, j = k % NumberOfBodies;
 
-		  // Calculate the distance from particle i to particle j
-		  const double distance = sqrt(
-            (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
-            (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
-            (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
-		  );
+	if (j <= i) {
 
-		  if (distance != 0) { // Just in case
+		i = NumberOfBodies - i - 2;
+		j = NumberOfBodies - j - 1;
 
-		    for (int k = 0; k < 3; k++) { // Not worth parallelising
+	}
 
-			    double force = (x[j][k] - x[i][k]) * mass[i] * mass[j] / distance / distance / distance ;
+	// Calculate the distance from particle i to particle j
+    double distance = sqrt(
+      (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
+      (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
+      (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
+    );
 
-			    forces[i][k] += force;
-			    forces[j][k] -= force;
+    if (distance != 0) { // Just in case
 
-		    }
+      double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
+      double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
+      double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
-          }
+      forces[i][0] += force0;
+      forces[j][0] -= force0;
 
-		  minDx = std::min( minDx,distance );
+      forces[i][1] += force1;
+      forces[j][1] -= force1;
 
-	  }
+      forces[i][2] += force2;
+      forces[j][2] -= force2;
+
+    }
+
+    if(distance < minDx) {
+
+      minDx = distance;
+
+    }
 
   }
 
-  #pragma omp parallel for reduction(max:maxV) private(totalV)
+  #pragma omp parallel for reduction(max:maxV)
   for (int i = 0; i < NumberOfBodies; i++) {
 
-	  double totalV = 0;
+	x[i][0] = x[i][0] + timeStepSize * v[i][0];
+	x[i][1] = x[i][1] + timeStepSize * v[i][1];
+	x[i][2] = x[i][2] + timeStepSize * v[i][2];
 
-	  for (int k = 0; k < 3; k++) {
+	v[i][0] = v[i][0] + timeStepSize * forces[i][0] / mass[i];
+    v[i][1] = v[i][2] + timeStepSize * forces[i][1] / mass[i];
+    v[i][2] = v[i][2] + timeStepSize * forces[i][2] / mass[i];
 
-		  x[i][k] = x[i][k] + timeStepSize * v[i][k];                // Update particle i coordinates in dimension k
-		  v[i][k] = v[i][k] + timeStepSize * forces[i][k] / mass[i]; // Update particle i velocity in dimension k
+	double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 
-		  totalV += v[i][k] * v[i][k];
+	if (totalV > maxV) {
 
-	  }
-
-	  totalV = sqrt(totalV);
-
-	  maxV = std::max( maxV,totalV );
+		maxV = totalV;
+    }
 
   }
 
@@ -302,13 +316,13 @@ int main(int argc, char** argv) {
     timeStepCounter++;
     if (t >= tPlot) {
       printParaviewSnapshot();
-      //std::cout << "plot next snapshot"
-    	//	    << ",\t time step=" << timeStepCounter
-    		//    << ",\t t="         << t
-				//<< ",\t dt="        << timeStepSize
-				//<< ",\t v_max="     << maxV
-				//<< ",\t dx_min="    << minDx
-				//<< std::endl;
+//      std::cout << "plot next snapshot"
+//    		    << ",\t time step=" << timeStepCounter
+//    		    << ",\t t="         << t
+//				<< ",\t dt="        << timeStepSize
+//				<< ",\t v_max="     << maxV
+//				<< ",\t dx_min="    << minDx
+//				<< std::endl;
 
       tPlot += tPlotDelta;
     }

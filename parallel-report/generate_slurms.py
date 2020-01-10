@@ -16,7 +16,7 @@ template = """#!/bin/csh
 #SBATCH --mail-type=ALL
 source /etc/profile.d/modules.sh
 module load intel/xe_2017.2
-export OMP_NUM THREADS=24
+export OMP_NUM THREADS={}
 ./a.out {}"""
 
 threads = [1, 2, 4, 8, 12, 16, 20, 24]
@@ -61,7 +61,7 @@ for i, thread in enumerate(threads):
 
         string = " ".join(args) + build_particle_string(num_particles)
 
-        strong_file.write(template.format(strong_name, strong_name, strong_name, thread, string))
+        strong_file.write(template.format(strong_name, strong_name, strong_name, thread, thread, string))
 
     k = num_particles + (i * 100)
 
@@ -71,7 +71,7 @@ for i, thread in enumerate(threads):
 
         string = " ".join(args) + build_particle_string(k)
 
-        weak_file.write(template.format(weak_name, weak_name, weak_name, thread, string))
+        weak_file.write(template.format(weak_name, weak_name, weak_name, thread, thread, string))
 
 
 

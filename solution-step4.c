@@ -180,6 +180,22 @@ void printParaviewSnapshot() {
   videoFile << "<DataSet timestep=\"" << counter << "\" group=\"\" part=\"0\" file=\"" << filename.str() << "\"/>" << std::endl;
 }
 
+// We can specify variables as private, so each thread has its own copy.
+// By default, loop iteration counters are private, but ALL OTHER VARIABLES ARE SHARED.
+
+// We could set the number of threads internally. Interesting.
+// Once this is working, THEN I can test it.
+// Different kinds of loop scheduling: static (each is assigned a chunk of iterations, round-robin style. Default.
+// Dynamic: each thread is initialised with a chunk of threads
+// Guided: iterations are divided into peices that successively decrease exponentially, with chunk being the smallest size
+// (so what's the largest)?
+// #pragma omp for schedule(static, 5).
+
+// Values of the loop control expressions must be the same for all iterations of the loop.
+// This likely means that we CAN'T parallelise the second inner loop, as we decrement j on merge.
+// Actually, that's for step 2, and this is the parallelised version of step 1, so we're fine.
+// It is only possible to collapse perfectly nested loops.
+
 /**
  * This is the only operation you are allowed to change in the assignment.
  */
@@ -198,7 +214,17 @@ void updateBody() {
 
   }
 
+  // OpenMP is a multi-threading, shared address model. Threads communicate by sharing variables.
+  // Unintended sharing of data causes race conditions. To control race conditions, use synchronisation
+  // to protect data conflicts. This is expensive, so change how data is accessed to minimise the need for synchronisation
+  // Fork-Join Parallelism
+  // It's finally running! Took about three hours, mind you.
+  // This is a ridiculously inefficient workflow.
+  // Oh well.
+
   // Iterate through the particles, from 0 to n - 1
+  // Loop iteration counters are private by default; all other variables are shared.
+  // http://www.bowdoin.edu/~ltoma/teaching/cs3225-GIS/fall17/Lectures/openmp.html
   // http://pages.tacc.utexas.edu/~eijkhout/pcse/html/omp-loop.html#Collapsingnestedloops
   // http://www.techdarting.com/2013/06/openmp-min-max-reduction-code.html
   #pragma omp parallel for collapse(2) reduction(min:minDx)

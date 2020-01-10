@@ -80,6 +80,7 @@ void setUp(int argc, char** argv) {
   timeStepSize = std::stof(argv[readArgument]); readArgument++;
 
   for (int i=0; i<NumberOfBodies; i++) {
+
     x[i] = new double[3];
     v[i] = new double[3];
 
@@ -193,25 +194,48 @@ void updateBody() {
   #pragma omp parallel for
   for (int i = 0; i < NumberOfBodies; i++) {
 
-     std::cout << "Particle " << i << " handled by thread: " << omp_get_thread_num() << std::endl;
+     // std::cout << "Particle " << i << " handled by thread: " << omp_get_thread_num() << std::endl;
 
 	 forces[i] = new double[3]{0.0, 0.0, 0.0};
 
   }
+
+	// They are completely arbitrary numbers.
+	// Perhaps this is where threading is fucking me over. 
+    // It IS possible that different threads are updating the same cell at the same time,
+	// I guess. But not that 
+    // I can't actually guarantee that it's wrong: it could be a lot of variables smushed together, though I think that unlikely. 
+// Improve performance by avoiding use of the collapsed-loop indices
+// How? It's doable. 
+// It'd be even better as a flat loop.
+// I guess that's what he is looking for.
+
+
+  // It could be a flat loop, to be fair. How many comparisons is it?
+
 
   // Iterate through the particles, from 0 to n - 1
   // Loop iteration counters are private by default; distance, force, and k are not.
   // http://www.bowdoin.edu/~ltoma/teaching/cs3225-GIS/fall17/Lectures/openmp.html
   // http://pages.tacc.utexas.edu/~eijkhout/pcse/html/omp-loop.html#Collapsingnestedloops
   // http://www.techdarting.com/2013/06/openmp-min-max-reduction-code.html
-  #pragma omp parallel for collapse(2) reduction(min:minDx)
-  for (int i = 0; i < NumberOfBodies - 1; i++) {
 
-	  // Iterate through the particles, from i to n
-	  for (int j = i + 1;  j < NumberOfBodies; j++) {
+  #pragma omp parallel for reduction(min:minDx)
+  for (int k = 0; k < NumberOfBodies * (NumberOfBodies - 1) / 2; k++) {
+
+	size_t i = k / NumberOfBodies, j = k % NumberOfBodies;
+
+	if (j <= i) {
+
+		i = NumberOfBodies - i - 2;
+		j = NumberOfBodies - j - 1;
+
+	}
+	
+	//std::cout << i << ", " << j << std::endl;
 
 		  // Calculate the distance from particle i to particle j
-		  const double distance = sqrt(
+		  double distance = sqrt(
             (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
             (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
             (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
@@ -219,38 +243,52 @@ void updateBody() {
 
 		  if (distance != 0) { // Just in case
 
-		    for (int k = 0; k < 3; k++) { // Not worth parallelising
 
-			    double force = (x[j][k] - x[i][k]) * mass[i] * mass[j] / distance / distance / distance ;
+		    double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
+			double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
+			double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
-			    forces[i][k] += force;
-			    forces[j][k] -= force;
+			    forces[i][0] += force0;
+			    forces[j][0] -= force0;
 
-		    }
+				forces[i][1] += force1;
+			    forces[j][1] -= force1;
+
+				forces[i][2] += force2;
+			    forces[j][2] -= force2;
 
           }
 
-		  minDx = std::min( minDx,distance );
+          if(distance < minDx) {
 
-	  }
+            minDx = distance;
+            
+          }
+
+		  // minDx = std::min( minDx,distance );
 
   }
 
+  // This loop is the issue.
+
   #pragma omp parallel for reduction(max:maxV)
   for (int i = 0; i < NumberOfBodies; i++) {
+	
+	  x[i][0] = x[i][0] + timeStepSize * v[i][0];  
+	x[i][1] = x[i][1] + timeStepSize * v[i][1];  
+	x[i][2] = x[i][2] + timeStepSize * v[i][2];  
 
-	  double totalV = 0;
+	v[i][0] = v[i][0] + timeStepSize * forces[i][0] / mass[i]; // Update particle i velocity in dimension k
+v[i][1] = v[i][2] + timeStepSize * forces[i][1] / mass[i]; // Update particle i velocity in dimension k
+v[i][2] = v[i][2] + timeStepSize * forces[i][2] / mass[i]; // Update particle i velocity in dimension k
 
-	  for (int k = 0; k < 3; k++) {
 
-		  x[i][k] = x[i][k] + timeStepSize * v[i][k];                // Update particle i coordinates in dimension k
-		  v[i][k] = v[i][k] + timeStepSize * forces[i][k] / mass[i]; // Update particle i velocity in dimension k
+	double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 
-		  totalV += v[i][k] * v[i][k];
+	if (totalV > maxV) {
 
-	  }
-
-	  maxV = std::max( maxV,sqrt(totalV) );
+		maxV = totalV;
+}
 
   }
 

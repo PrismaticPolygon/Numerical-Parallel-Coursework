@@ -249,12 +249,6 @@ void updateBody() {
 
 		  }
 
-//		  if (distance > minDx) {
-//
-//		    minDx = distance;
-//
-//		  }
-
 		  minDx = std::min( minDx,distance );
 
 	  }
@@ -266,7 +260,6 @@ void updateBody() {
 
 	  double totalV = 0;
 
-      #pragma omp parallel for reduction(+: totalV) // Might not work
 	  for (int k = 0; k < 3; k++) {
 
 		  x[i][k] = x[i][k] + timeStepSize * v[i][k];                // Update particle i coordinates in dimension k
@@ -277,12 +270,6 @@ void updateBody() {
 	  }
 
 	  totalV = sqrt(totalV);
-
-//      if (totalV > maxV) {
-//
-//        maxV = totalV;
-//
-//      }
 
 	  maxV = std::max( maxV,totalV );
 

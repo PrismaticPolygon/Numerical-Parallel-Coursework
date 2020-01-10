@@ -2,18 +2,7 @@
 //
 // icpc -O3 -fopenmp --std=c++11 solution-step4.c -o solution-step4
 //
-// There should be a result.pvd file that you can open with Paraview.
-// Sometimes, Paraview requires to select the representation "Point Gaussian"
-// to see something meaningful.
-//
 // (C) 2018-2019 Tobias Weinzierl
-
-/*
- * All objects should move freely through space. Ensure that the global statistics
- * (minimal distance between all objects and maximum velocity) are still computed correctly
- * Marks are given for correctness and efficiency (try to spot redundant computations).
- * Worth 25 marks.
- */
 
 #include <fstream>
 #include <sstream>
@@ -76,6 +65,7 @@ double   minDx;
  * This operation is not to be changed in the assignment.
  */
 void setUp(int argc, char** argv) {
+
   NumberOfBodies = (argc-4) / 7;
 
   x    = new double*[NumberOfBodies];
@@ -89,6 +79,7 @@ void setUp(int argc, char** argv) {
   timeStepSize = std::stof(argv[readArgument]); readArgument++;
 
   for (int i=0; i<NumberOfBodies; i++) {
+
     x[i] = new double[3];
     v[i] = new double[3];
 
@@ -103,20 +94,26 @@ void setUp(int argc, char** argv) {
     mass[i] = std::stof(argv[readArgument]); readArgument++;
 
     if (mass[i]<=0.0 ) {
+
       std::cerr << "invalid mass for body " << i << std::endl;
       exit(-2);
+
     }
+
   }
 
   // std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
 
   if (tPlotDelta<=0.0) {
+
     // std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
-  }
-  else {
+
+  } else {
+
     // std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
+
   }
 }
 
@@ -129,19 +126,11 @@ std::ofstream videoFile;
  */
 void openParaviewVideoFile() {
 
-// Ah. Has to be a in parallel region.
-// Interesting. 
-// I'll want two different files: one that generates my stuff and the other for submission, like the last time.
-
   videoFile.open( "result.pvd" );
   videoFile << "<?xml version=\"1.0\"?>" << std::endl
             << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">" << std::endl
             << "<Collection>";
 }
-
-
-
-
 
 /**
  * This operation is not to be changed in the assignment.
@@ -150,7 +139,6 @@ void closeParaviewVideoFile() {
   videoFile << "</Collection>"
             << "</VTKFile>" << std::endl;
 }
-
 
 /**
  * The file format is documented at http://www.vtk.org/wp-content/uploads/2015/04/file-formats.pdf

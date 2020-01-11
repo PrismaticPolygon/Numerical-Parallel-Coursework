@@ -208,15 +208,13 @@ void updateBody() {
 	  for (int j = i + 1;  j < NumberOfBodies; j++) {
 		  
 		  // Calculate the distance from particle i to particle j
-		  const double distance = sqrt(
+		  double distance = (
 		        (x[i][0]-x[j][0]) * (x[i][0]-x[j][0]) +
 		        (x[i][1]-x[j][1]) * (x[i][1]-x[j][1]) +
 		        (x[i][2]-x[j][2]) * (x[i][2]-x[j][2])
 		      );
-	  
-		  minDx = std::min( minDx,distance );
 		  
-		  if (distance < diameter) {
+		  if (distance < 0.0001) {
 
 			 double newWeight = mass[i] + mass[j];
 			 double weight_i_over = mass[i] / newWeight;
@@ -229,8 +227,6 @@ void updateBody() {
 			 x[i][0] += weight_j_over * (x[j][0] - x[i][0]);
 			 x[i][1] += weight_j_over * (x[j][1] - x[i][1]);
 			 x[i][2] += weight_j_over * (x[j][2] - x[i][2]);
-
-		     // This isn't right.
 			    			
 			 mass[i] = newWeight;
 			
@@ -245,23 +241,28 @@ void updateBody() {
 			 NumberOfBodies--;  
 			 j--;	// Decrement j as the "old" j has been deleted
 			  
+distance = sqrt(distance);
 			  
 		  }	else {
+
+			distance = sqrt(distance);
 		
 			  double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
       		  double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
       		  double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
             forces0[i] += force0;
-      forces0[j] += -force0;
+      		forces0[j] += -force0;
 
-      forces1[i] += force1;
-      forces1[j] += -force1;
+      		forces1[i] += force1;
+      		forces1[j] += -force1;
 
-      forces2[i] += force2;
-      forces2[j] += -force2;
+      		forces2[i] += force2;
+      		forces2[j] += -force2;
 		  
 		  }
+
+		minDx = std::min( minDx, distance );
 		  
 	  }
     

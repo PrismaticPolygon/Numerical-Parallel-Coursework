@@ -14,7 +14,7 @@
  * All objects should move freely through space. Ensure that the global statistics
  * (minimal distance between all objects and maximum velocity) are still computed correctly
  * Marks are given for correctness and efficiency (try to spot redundant computations).
- * Worth 25 marks.
+ * Worth 25 marks. 
  */
 
 #include <fstream>
@@ -76,7 +76,7 @@ double diameter = 0.01;
  * This operation is not to be changed in the assignment.
  */
 void setUp(int argc, char** argv) {
-
+	
   NumberOfBodies = (argc-4) / 7;
 
   x    = new double*[NumberOfBodies];
@@ -90,7 +90,7 @@ void setUp(int argc, char** argv) {
   timeStepSize = std::stof(argv[readArgument]); readArgument++;
 
   for (int i=0; i<NumberOfBodies; i++) {
-
+	  
     x[i] = new double[3];
     v[i] = new double[3];
 
@@ -105,21 +105,21 @@ void setUp(int argc, char** argv) {
     mass[i] = std::stof(argv[readArgument]); readArgument++;
 
     if (mass[i]<=0.0 ) {
-
+    	
       std::cerr << "invalid mass for body " << i << std::endl;
       exit(-2);
-
+      
     }
   }
 
-//  std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
-
+  std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
+  
   if (tPlotDelta<=0.0) {
     std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
   }
   else {
-//    std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
+    std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
   }
 }
@@ -160,7 +160,7 @@ void printParaviewSnapshot() {
   static int counter = -1;
   counter++;
   std::stringstream filename;
-  filename << "results/result-" << counter <<  ".vtp";
+  filename << "result-" << counter <<  ".vtp";
   std::ofstream out( filename.str().c_str() );
   out << "<VTKFile type=\"PolyData\" >" << std::endl
       << "<PolyData>" << std::endl
@@ -193,104 +193,110 @@ void printParaviewSnapshot() {
  * This is the only operation you are allowed to change in the assignment.
  */
 void updateBody() {
-
+	
   maxV   = 0.0;	// The highest velocity
   minDx  = std::numeric_limits<double>::max();	// The minimum distance between particles
-
-  double** forces = new double*[NumberOfBodies];	// A 2D array of the forces on each molecule [[fx1, fy1, fz1], [fx2, fy2, fz2], [fx3, fy3, fz3]]. Here because we can't modify other methods.
-
-  for (int i = 0; i < NumberOfBodies; i++) {
-
-	  forces[i] = new double[3]{0.0, 0.0, 0.0};
-
-  }
-
+  
+  double* forces0 = new double[NumberOfBodies]{0};
+  double* forces1 = new double[NumberOfBodies]{0};
+  double* forces2 = new double[NumberOfBodies]{0};
+  
   // Iterate through the particles, from 0 to 1
   for (int i = 0; i < NumberOfBodies - 1; i++) {
-
+	  
 	  // Iterate through the particles, from i to 2
 	  for (int j = i + 1;  j < NumberOfBodies; j++) {
-
+		  
 		  // Calculate the distance from particle i to particle j
-		  const double distance = sqrt(
+		  double distance = (
 		        (x[i][0]-x[j][0]) * (x[i][0]-x[j][0]) +
 		        (x[i][1]-x[j][1]) * (x[i][1]-x[j][1]) +
 		        (x[i][2]-x[j][2]) * (x[i][2]-x[j][2])
 		      );
+		  
+		  if (distance < 0.0001) {
 
-		  minDx = std::min( minDx,distance );
+			 double newWeight = mass[i] + mass[j];
+			 double weight_i_over = mass[i] / newWeight;
+			 double weight_j_over = mass[j] / newWeight;
 
-		  if (distance < diameter) {
+			 v[i][0] = weight_i_over * v[i][0] + weight_j_over * v[j][0];
+			 v[i][1] = weight_i_over * v[i][1] + weight_j_over * v[j][1];
+			 v[i][2] = weight_i_over * v[i][2] + weight_j_over * v[j][2];
 
-			  for (int k = 0; k < 3; k++) {
-
-				  v[i][k] = (mass[i] / (mass[i] + mass[j])) * v[i][k] + (mass[j] / (mass[i] + mass[j])) * v[j][k];
-
-
-			  }
-
-			  mass[i] += mass[j]; // Merge masses
-
-			for (int c = j; c < NumberOfBodies; c++) {	// Remove particle j by left-shifting subsequent particles
-
+			 x[i][0] += weight_j_over * (x[j][0] - x[i][0]);
+			 x[i][1] += weight_j_over * (x[j][1] - x[i][1]);
+			 x[i][2] += weight_j_over * (x[j][2] - x[i][2]);
+			    			
+			 mass[i] = newWeight;
+			
+			 for (int c = j; c < NumberOfBodies; c++) {	// Remove particle j by left-shifting subsequent particles 
+			
 				x[c] = x[c+1];			// Co-ordinates
 				mass[c] = mass[c+1];	// Mass
 				v[c] = v[c+1];			//	Velocity
-
-			}
-
-			 NumberOfBodies--;
+			
+			 }	
+			
+			 NumberOfBodies--;  
 			 j--;	// Decrement j as the "old" j has been deleted
 
-			 std::cout << x[i][0] << "," << x[i][1] << "," << x[i][2] << "," << t << std::endl;
-
-
+			 std::cout << x[i][0] << ", " << x[i][1] << ", " << x[i][2] << std::endl;
+			  
+            distance = sqrt(distance);
+			  
 		  }	else {
 
-			  for (int k = 0; k < 3; k++) {
+			distance = sqrt(distance);
+		
+			  double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
+      		  double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
+      		  double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
-				  double force = (x[j][k]-x[i][k]) * mass[i] * mass[j] / distance / distance / distance ;
+            forces0[i] += force0;
+      		forces0[j] += -force0;
 
-				  forces[i][k] += force;
-				  forces[j][k] -= force;
+      		forces1[i] += force1;
+      		forces1[j] += -force1;
 
-			  }
-
+      		forces2[i] += force2;
+      		forces2[j] += -force2;
+		  
 		  }
 
+		minDx = std::min( minDx, distance );
+		  
 	  }
-
+    
   }
-
+  
   for (int i = 0; i < NumberOfBodies; i++) {	// Update positions and velocity of particles
+	  
+	  x[i][0] = x[i][0] + timeStepSize * v[i][0];
+	x[i][1] = x[i][1] + timeStepSize * v[i][1];
+	x[i][2] = x[i][2] + timeStepSize * v[i][2];  
 
-	  double totalV = 0;
+	v[i][0] = v[i][0] + timeStepSize * forces0[i] / mass[i];
+    v[i][1] = v[i][1] + timeStepSize * forces1[i] / mass[i];
+    v[i][2] = v[i][2] + timeStepSize * forces2[i] / mass[i];
 
-	  for (int k = 0; k < 3; k++) {
-
-		  x[i][k] = x[i][k] + timeStepSize * v[i][k];	// Update particle i coordinates in dimension k
-
-		  v[i][k] = v[i][k] + timeStepSize * forces[i][k] / mass[i];	// Update particle i velocity in dimension k
-
-		  totalV += v[i][k] * v[i][k];
-
-	  }
-
-	  maxV = std::max(maxV, std::sqrt(totalV));
+	double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
+	  
+	  maxV = std::max(maxV, totalV);
 
   }
-
+  
   if (NumberOfBodies == 1) {	// Terminate
-
+	  
 	  tFinal = t;
-
-//	  std::cout << x[0][0] << ", " << x[0][1] << ", " << x[0][2] << time << std::endl;
-
+	  
   }
 
   t += timeStepSize;
-
-  delete[] forces;
+  
+  delete[] forces0;
+	delete[] forces1;	
+	delete[] forces2;
 
 }
 
@@ -328,28 +334,33 @@ int main(int argc, char** argv) {
   openParaviewVideoFile();
 
   int snapshotCounter = 0;
-
   if (t > tPlot) {
-
     printParaviewSnapshot();
+    std::cout << "plotted initial setup" << std::endl;
     tPlot = tPlotDelta;
-
   }
 
   int timeStepCounter = 0;
-
+  
   while (t <= tFinal) {
-
+  	
     updateBody();
     timeStepCounter++;
-
+    
     if (t >= tPlot) {
-
+    	
       printParaviewSnapshot();
+      std::cout << "plot next snapshot"
+    		    << ",\t time step=" << timeStepCounter
+    		    << ",\t t="         << t
+				<< ",\t dt="        << timeStepSize
+				<< ",\t v_max="     << maxV
+				<< ",\t dx_min="    << minDx
+				<< std::endl;
 
       tPlot += tPlotDelta;
     }
-
+    
   }
 
   closeParaviewVideoFile();

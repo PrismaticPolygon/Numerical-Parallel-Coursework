@@ -103,7 +103,9 @@ void setUp(int argc, char** argv) {
 
   }
 
-  std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
+  std::cout << "Running... " << std::endl;
+
+  // std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
 
   if (tPlotDelta<=0.0) {
 
@@ -301,21 +303,21 @@ int main(int argc, char** argv) {
 
   setUp(argc,argv);
 
-  openParaviewVideoFile();
+  //openParaviewVideoFile();
 
   int snapshotCounter = 0;
-  if (t > tPlot) {
-    printParaviewSnapshot();
-    std::cout << "plotted initial setup" << std::endl;
-    tPlot = tPlotDelta;
-  }
+  //if (t > tPlot) {
+    //printParaviewSnapshot();
+    //std::cout << "plotted initial setup" << std::endl;
+    //tPlot = tPlotDelta;
+  //}
 
   int timeStepCounter = 0;
   while (t<=tFinal) {
     updateBody();
     timeStepCounter++;
     if (t >= tPlot) {
-      printParaviewSnapshot();
+      //printParaviewSnapshot();
 //      std::cout << "plot next snapshot"
 //    		    << ",\t time step=" << timeStepCounter
 //    		    << ",\t t="         << t
@@ -328,7 +330,7 @@ int main(int argc, char** argv) {
     }
   }
 
-  closeParaviewVideoFile();
+  //closeParaviewVideoFile();
 
   auto stop = high_resolution_clock::now();
 

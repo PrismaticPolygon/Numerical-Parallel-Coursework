@@ -183,9 +183,7 @@ void updateBody() {
   }
 
   maxV = 0.0;
-
-  // I'm not very happy with parallelising the rest of this shit.
-  // But I do need some of them.
+  // I can't make it a nice one.
 
   #pragma omp parallel for
   for (int i = 0; i < NumberOfBodies - 1; i++) {  // Iterate through particles

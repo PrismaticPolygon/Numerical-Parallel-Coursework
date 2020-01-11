@@ -1,0 +1,3 @@
+type,threads,num_particles,runtime
+strong,1,100,717780840
+strong,2,100

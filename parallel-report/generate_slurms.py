@@ -11,20 +11,33 @@ template = """#!/bin/sh
 #SBATCH -t 02:00:00
 #SBATCH --exclusive
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mail-user=ffgt86@durham.ac.uk
+#SBATCH --cpus-per-task=1
+#SBATCH --mail-user=ffgt86@dur.ac.uk
 #SBATCH --mail-type=ALL
 source /etc/profile.d/modules.sh
 module load intel/xe_2017.2
 export OMP_NUM THREADS={}
-./solution-step5 0.01 5.0 1e-6 $(cat {})"""
+./solution-step5 5.0 1e-6 $(cat {})"""
 
+# So we have way more threads available.
+# So each NODE has 24 CPUs. Each CPU has 8 cores and 16 threads.
+# Bam bam bam bam fuck you.
+# So I've been threading across CPUs?
+# I don't know!
+# Let's stick with 1 NODE, 1 CPU, and just increase the number of threads.
+
+# Is that right?
+# Up to 24 hours
+# Cores are Intel Xeon E5-2670s, which have 8 cores and 16 threads. (https://www.top500.org/system/177745)
+# I'm not sure WHAT to specify.
 # Didn't occur to me that each core could have multiple threads.
+# If each core can have multiple threads, what does that change?
+# I'm not sure.
 # Then again, I'm not 'allowed' to share anyway, soo....
 # Maybe I should have some backup runs on MIRA. Yeah, let's do that.
 # Just to be safe.
 
-threads = [1, 2, 4, 8, 12, 16, 20, 24]
+threads = [1, 2, 4, 8, 12, 16]
 num_particles = 100
 
 random.seed(0)

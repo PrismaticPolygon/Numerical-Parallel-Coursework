@@ -264,6 +264,12 @@ void updateBody() {
 
   t += timeStepSize;
 
+  #pragma omp parallel for
+  for (int i = 0; i < NumberOfBodies; i+) { // Free up memory.
+
+        delete[] forces[i];
+  }
+
   delete[] forces;
 
 }

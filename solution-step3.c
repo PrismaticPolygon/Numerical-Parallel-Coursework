@@ -260,6 +260,11 @@ void updateBody() {
 
   t += timeStepSize;
   
+  for (int i = 0; i < NumberOfBodies; i+) { // Free up memory.
+
+        delete[] forces[i];
+  }
+
   delete[] forces;
 
 }

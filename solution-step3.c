@@ -181,7 +181,7 @@ void updateBody() {
   for (int i = 0; i < NumberOfBodies - 1; i++) {  // Iterate through particles
 
     int timeSteps = pow(2, buckets[i]);									// The number of timesteps to run bucket k for
-    double timeStepSizeEuler = timeStepSize / timeSteps;          // The size of the timestep for bucket k
+    double timeStepSizeEuler = timeStepSize / timeSteps;                // The size of the timestep for bucket k
 
     for (int q = 0; q < timeSteps; q++) { // Iterate through timesteps
 

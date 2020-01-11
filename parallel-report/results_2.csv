@@ -1,3 +1,5 @@
-type,threads,num_particles,runtime
+type,threads,size,runtime
 strong,1,100,717780840
-strong,2,100
+weak,1,100,729159799
+weak,2,200,1517987978
+weak,4,400,2425527834

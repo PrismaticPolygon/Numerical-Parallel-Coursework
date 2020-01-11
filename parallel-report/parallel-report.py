@@ -74,7 +74,7 @@ def weak():
 
     global t_1, s_1
 
-    df = pd.read_csv("dummy.csv")
+    df = pd.read_csv("results_2.csv")
     df = df[df["type"] == "weak"]
 
     t_1 = df.iloc[0]["runtime"]    # Time taken on 1 core
@@ -108,6 +108,6 @@ def weak():
 
 if __name__ == "__main__":
 
-    strong()
+    # strong()
 
     weak()

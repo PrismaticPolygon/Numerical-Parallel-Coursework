@@ -189,16 +189,19 @@ void updateBody() {
 
   maxV   = 0.0;
   minDx  = std::numeric_limits<double>::max();
-  forces = new double*[NumberOfBodies];
 
-  #pragma omp parallel for
-  for (int i = 0; i < NumberOfBodies; i++) {
+  forces0 = new double[NumberOfBodies] = {};    // Sets to 0
+  forces1 = new double[NumberOfBodies] = {};    // Sets to 0
+  forces2 = new double[NumberOfBodies] = {};    // Sets to 0
 
-	 forces[i] = new double[3]{0.0, 0.0, 0.0};
+  // 64 cores -> 128 threads.
+  // g++ -fopenmp
+  // lscpu
 
-  }
+  // When merging velocity, weighted positions
+  // Reduction force.
 
-  #pragma omp parallel for reduction(min:minDx)
+  #pragma omp parallel for reduction(std::min:minDx)
   for (int k = 0; k < NumberOfBodies * (NumberOfBodies - 1) / 2; k++) {
 
 	size_t i = k / NumberOfBodies, j = k % NumberOfBodies;
@@ -223,26 +226,22 @@ void updateBody() {
       double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
       double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
-      forces[i][0] += force0;
-      forces[j][0] -= force0;
+      forces0[i] += force0;
+      forces0[j] -= force0;
 
-      forces[i][1] += force1;
-      forces[j][1] -= force1;
+      forces1[i] += force1;
+      forces1[j] -= force1;
 
-      forces[i][2] += force2;
-      forces[j][2] -= force2;
-
-    }
-
-    if (distance < minDx) {
-
-      minDx = distance;
+      forces2[i] += force2;
+      forces2[j] -= force2;
 
     }
+
+    std::min( minDx,distance );
 
   }
 
-  #pragma omp parallel for reduction(max:maxV)
+  #pragma omp parallel for reduction(std::max:maxV)
   for (int i = 0; i < NumberOfBodies; i++) {
 	
 	x[i][0] = x[i][0] + timeStepSize * v[i][0];
@@ -255,22 +254,15 @@ void updateBody() {
 
 	double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 
-	if (totalV > maxV) {
-
-		maxV = totalV;
-    }
+    std::max(maxV,totalV);
 
   }
 
   t += timeStepSize;
 
-  #pragma omp parallel for
-  for (int i = 0; i < NumberOfBodies; i+) { // Free up memory.
-
-        delete[] forces[i];
-  }
-
-  delete[] forces;
+  delete[] forces0;
+  delete[] forces1;
+  delete[] forces2;
 
 }
 

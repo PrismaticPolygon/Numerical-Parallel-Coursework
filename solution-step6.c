@@ -1,4 +1,6 @@
-// g++ -O3 --std=c++11 solution-step3.c -o solution-step3
+// Translate this file with
+//
+// icpc -O3 -fopenmp --std=c++11 solution-step6.c -o solution-step6
 //
 // (C) 2018-2019 Tobias Weinzierl
 
@@ -9,6 +11,7 @@
 #include <math.h>
 #include <limits>
 #include <iomanip>
+#include <omp.h>
 
 
 double t             = 0;   // Start time.
@@ -29,15 +32,13 @@ double   maxV     = 0.0;    // Maximum velocity of all particles.
 double   minDx;             // Minimum distance between two particles.
 double   diameter = 0.01;   // Diameter below which particles merge.
 
-// Not quite what I had in mind.
-
 /**
  * Set up scenario from the command line.
  *
  * This operation is not to be changed in the assignment.
  */
 void setUp(int argc, char** argv) {
-	
+
   NumberOfBodies = (argc-4) / 7;
 
   x    = new double*[NumberOfBodies];
@@ -51,7 +52,7 @@ void setUp(int argc, char** argv) {
   timeStepSize = std::stof(argv[readArgument]); readArgument++;
 
   for (int i = 0; i < NumberOfBodies; i++) {
-	  
+
     x[i] = new double[3];
     v[i] = new double[3];
 
@@ -66,26 +67,26 @@ void setUp(int argc, char** argv) {
     mass[i] = std::stof(argv[readArgument]); readArgument++;
 
     if (mass[i] <= 0.0) {
-    	
+
       std::cerr << "invalid mass for body " << i << std::endl;
       exit(-2);
-      
+
     }
 
   }
 
   std::cout << "created setup with " << NumberOfBodies << " bodies" << std::endl;
-  
+
   if (tPlotDelta <= 0.0) {
 
     std::cout << "plotting switched off" << std::endl;
     tPlot = tFinal + 1.0;
 
   } else {
-  
+
     std::cout << "plot initial setup plus every " << tPlotDelta << " time units" << std::endl;
     tPlot = 0.0;
-  
+
   }
 
 }
@@ -96,18 +97,22 @@ std::ofstream videoFile;
  * This operation is not to be changed in the assignment.
  */
 void openParaviewVideoFile() {
+
   videoFile.open( "result.pvd" );
   videoFile << "<?xml version=\"1.0\"?>" << std::endl
             << "<VTKFile type=\"Collection\" version=\"0.1\" byte_order=\"LittleEndian\" compressor=\"vtkZLibDataCompressor\">" << std::endl
             << "<Collection>";
+
 }
 
 /**
  * This operation is not to be changed in the assignment.
  */
 void closeParaviewVideoFile() {
+
   videoFile << "</Collection>"
             << "</VTKFile>" << std::endl;
+
 }
 
 /**
@@ -116,6 +121,7 @@ void closeParaviewVideoFile() {
  * This operation is not to be changed in the assignment.
  */
 void printParaviewSnapshot() {
+
   static int counter = -1;
   counter++;
   std::stringstream filename;
@@ -151,13 +157,13 @@ void printParaviewSnapshot() {
  */
 void updateBody() {
 
-  maxV            = 0.0;	                              // The highest velocity
-  minDx  		   = std::numeric_limits<double>::max();	// The minimum distance between particles
+  minDx  		  = std::numeric_limits<double>::max();	// The minimum distance between particles
   forces          = new double*[NumberOfBodies];	      // A 2D array of the forces on each molecule
   int numBuckets  = 10;
   int* buckets    = new int[NumberOfBodies];             // The number of buckets
   double vBucket  = maxV / (numBuckets - 1);		         // The partition
 
+  #pragma omp parallel for
   for (int i = 0; i < NumberOfBodies; i++) {
 
 	forces[i] = new double[3]{0.0, 0.0, 0.0};             // Initialise forces on each particle to 0
@@ -178,6 +184,10 @@ void updateBody() {
 
   maxV = 0.0;
 
+  // I'm not very happy with parallelising the rest of this shit.
+  // But I do need some of them.
+
+  #pragma omp parallel for
   for (int i = 0; i < NumberOfBodies - 1; i++) {  // Iterate through particles
 
     int timeSteps = pow(2, buckets[i]);									// The number of timesteps to run bucket k for
@@ -185,58 +195,58 @@ void updateBody() {
 
     for (int q = 0; q < timeSteps; q++) { // Iterate through timesteps
 
-      for (int j = i + 1; j < NumberOfBodies; j++) {  // Iterate through other bodies
+      for (int j = i + 1; j < NumberOfBodies; j++) {  // Iterate through other particles
 
           //std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
-          double distance = sqrt(
-            (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
-            (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
-            (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
-          );
+        double distance = sqrt(
+          (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
+          (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
+          (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
+        );
 
-          minDx = std::min( minDx,distance );
+        minDx = std::min( minDx,distance );
 
-          if (distance < diameter) {
+        if (distance < diameter) {
 
             //std::cout << "Merging particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
-            v[i][0] = (mass[i] / (mass[i] + mass[j])) * v[i][0] + (mass[j] / (mass[i] + mass[j])) * v[j][0];
-            v[i][1] = (mass[i] / (mass[i] + mass[j])) * v[i][1] + (mass[j] / (mass[i] + mass[j])) * v[j][1];
-            v[i][2] = (mass[i] / (mass[i] + mass[j])) * v[i][2] + (mass[j] / (mass[i] + mass[j])) * v[j][2];
+          v[i][0] = (mass[i] / (mass[i] + mass[j])) * v[i][0] + (mass[j] / (mass[i] + mass[j])) * v[j][0];
+          v[i][1] = (mass[i] / (mass[i] + mass[j])) * v[i][1] + (mass[j] / (mass[i] + mass[j])) * v[j][1];
+          v[i][2] = (mass[i] / (mass[i] + mass[j])) * v[i][2] + (mass[j] / (mass[i] + mass[j])) * v[j][2];
 
-            mass[i] += mass[j]; // Merge masses
+          mass[i] += mass[j]; // Merge masses
 
-            for (int c = j; c < NumberOfBodies; c++) {	// Remove particle from global arrays
+          for (int c = j; c < NumberOfBodies; c++) {	// Remove particle from global arrays
 
-              x[c]       = x[c + 1];					// Co-ordinates
-              mass[c]    = mass[c + 1];   			// Mass
-              v[c]       = v[c + 1];					// Velocity
-              buckets[c] = buckets[c + 1];            // Buckets
-
-            }
-
-            NumberOfBodies--;
-            j--;	// Decrement b as the "old" b has been deleted
-
-          } else {
-
-            double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
-            double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
-            double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
-
-            forces[i][0] += force0;
-            forces[j][0] -= force0;
-
-            forces[i][1] += force1;
-            forces[j][1] -= force1;
-
-            forces[i][2] += force2;
-            forces[j][2] -= force2;
+            x[c]       = x[c + 1];					// Co-ordinates
+            mass[c]    = mass[c + 1];   			// Mass
+            v[c]       = v[c + 1];					// Velocity
+            buckets[c] = buckets[c + 1];            // Buckets
 
           }
 
+          NumberOfBodies--;
+          j--;	// Decrement b as the "old" b has been deleted
+
+        } else {
+
+          double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
+          double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
+          double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
+
+          forces[i][0] += force0;
+          forces[j][0] -= force0;
+
+          forces[i][1] += force1;
+          forces[j][1] -= force1;
+
+          forces[i][2] += force2;
+          forces[j][2] -= force2;
+
         }
+
+      }
 
       x[i][0] = x[i][0] + timeStepSizeEuler * v[i][0];
 	  x[i][1] = x[i][1] + timeStepSizeEuler * v[i][1];
@@ -258,9 +268,18 @@ void updateBody() {
 
   }
 
+  if (NumberOfBodies == 1) {	// Terminate
+
+	tFinal = t;
+
+	std::cout << x[0][0] << ", " << x[0][1] << ", " << x[0][2] << std::endl;
+
+  }
+
   t += timeStepSize;
-  
+
   delete[] forces;
+  delete[] buckets;
 
 }
 
@@ -305,14 +324,14 @@ int main(int argc, char** argv) {
   }
 
   int timeStepCounter = 0;
-  
+
   while (t <= tFinal) {
-  	
+
     updateBody();
     timeStepCounter++;
-    
+
     if (t >= tPlot) {
-    	
+
       printParaviewSnapshot();
       std::cout << "plot next snapshot"
     		    << ",\t time step=" << timeStepCounter
@@ -324,7 +343,7 @@ int main(int argc, char** argv) {
 
       tPlot += tPlotDelta;
     }
-    
+
   }
 
   closeParaviewVideoFile();

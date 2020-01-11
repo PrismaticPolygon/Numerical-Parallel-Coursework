@@ -236,7 +236,7 @@ void updateBody() {
 
     }
 
-    if(distance < minDx) {
+    if (distance < minDx) {
 
       minDx = distance;
 
@@ -252,7 +252,7 @@ void updateBody() {
 	x[i][2] = x[i][2] + timeStepSize * v[i][2];  
 
 	v[i][0] = v[i][0] + timeStepSize * forces[i][0] / mass[i];
-    v[i][1] = v[i][2] + timeStepSize * forces[i][1] / mass[i];
+    v[i][1] = v[i][1] + timeStepSize * forces[i][1] / mass[i];
     v[i][2] = v[i][2] + timeStepSize * forces[i][2] / mass[i];
 
 	double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);

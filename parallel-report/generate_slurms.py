@@ -19,6 +19,8 @@ module load intel/xe_2017.2
 export OMP_NUM THREADS={}
 ./solution-step5 0.01 10.0 1e-7 $(cat {})"""
 
+# Didn't occur to me that each core could have multiple threads.
+
 threads = [1, 2, 4, 8, 12, 16, 20, 24]
 num_particles = 500
 

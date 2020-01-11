@@ -8,7 +8,7 @@ template = """#!/bin/sh
 #SBATCH -o {}.%A.out
 #SBATCH -e {}.%A.err
 #SBATCH -p par7.q
-#SBATCH -t 01:00:00
+#SBATCH -t 02:00:00
 #SBATCH --exclusive
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task={}
@@ -17,10 +17,10 @@ template = """#!/bin/sh
 source /etc/profile.d/modules.sh
 module load intel/xe_2017.2
 export OMP_NUM THREADS={}
-./solution-step5 0.01 10.0 1e-7 $(cat {})"""
+./solution-step5 0.01 5.0 1e-6 $(cat {})"""
 
 threads = [1, 2, 4, 8, 12, 16, 20, 24]
-num_particles = 500
+num_particles = 100
 
 random.seed(0)
 
@@ -42,7 +42,7 @@ def build_particle_string(num_particles, min_mass=1, max_mass=10):
 
 for i, thread in enumerate(threads):
 
-    k = num_particles + (i * 100)
+    k = num_particles * thread
     conditions = "conditions_{}.txt".format(k)
 
     with open("conditions_{}.txt".format(k), "w") as conditions_file:
@@ -54,7 +54,7 @@ for i, thread in enumerate(threads):
 
     with open(strong_name + ".slurm-script", "w") as strong_file:
 
-        strong_file.write(template.format(strong_name, strong_name, strong_name, thread, thread, "conditions_500.txt"))
+        strong_file.write(template.format(strong_name, strong_name, strong_name, thread, thread, "conditions_{}.txt".format(num_particles)))
 
     weak_name = "weak_{}_{}".format(thread, k)
 

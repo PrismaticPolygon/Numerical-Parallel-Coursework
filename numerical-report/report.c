@@ -214,7 +214,7 @@ void updateBody() {
 		        (x[i][2]-x[j][2]) * (x[i][2]-x[j][2])
 		      );
 		  
-		  if (distance < 0.0001) {
+		  if (distance <= 0.0001) {
 
 			 double newWeight = mass[i] + mass[j];
 			 double weight_i_over = mass[i] / newWeight;
@@ -249,9 +249,9 @@ void updateBody() {
 
 			distance = sqrt(distance);
 		
-			  double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
-      		  double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
-      		  double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
+			double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
+      		double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
+      		double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
             forces0[i] += force0;
       		forces0[j] += -force0;
@@ -264,7 +264,7 @@ void updateBody() {
 		  
 		  }
 
-		minDx = std::min( minDx, distance );
+		  minDx = std::min( minDx, distance );
 		  
 	  }
     

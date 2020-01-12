@@ -204,65 +204,64 @@ void updateBody() {
   // Iterate through the particles, from 0 to 1
   for (int i = 0; i < NumberOfBodies - 1; i++) {
 	  
-	  // Iterate through the particles, from i to 2
-	  for (int j = i + 1;  j < NumberOfBodies; j++) {
+	// Iterate through the particles, from i to 2
+	for (int j = i + 1;  j < NumberOfBodies; j++) {
 		  
-		  // Calculate the distance from particle i to particle j
-		  double distance = (
-		        (x[i][0]-x[j][0]) * (x[i][0]-x[j][0]) +
-		        (x[i][1]-x[j][1]) * (x[i][1]-x[j][1]) +
-		        (x[i][2]-x[j][2]) * (x[i][2]-x[j][2])
-		      );
+	  // Calculate the distance from particle i to particle j
+	    double distance = (
+	      (x[i][0]-x[j][0]) * (x[i][0]-x[j][0]) +
+	      (x[i][1]-x[j][1]) * (x[i][1]-x[j][1]) +
+	      (x[i][2]-x[j][2]) * (x[i][2]-x[j][2])
+	    );
 		  
-		  if (distance < 0.0001) {
+	    if (distance <= 0.0001) {
 
-			 double newWeight = mass[i] + mass[j];
-			 double weight_i_over = mass[i] / newWeight;
-			 double weight_j_over = mass[j] / newWeight;
+		  double newWeight = mass[i] + mass[j];
+		  double weight_i_over = mass[i] / newWeight;
+		  double weight_j_over = mass[j] / newWeight;
 
-			 v[i][0] = weight_i_over * v[i][0] + weight_j_over * v[j][0];
-			 v[i][1] = weight_i_over * v[i][1] + weight_j_over * v[j][1];
-			 v[i][2] = weight_i_over * v[i][2] + weight_j_over * v[j][2];
+		  v[i][0] = weight_i_over * v[i][0] + weight_j_over * v[j][0];
+		  v[i][1] = weight_i_over * v[i][1] + weight_j_over * v[j][1];
+		  v[i][2] = weight_i_over * v[i][2] + weight_j_over * v[j][2];
 
-			 x[i][0] += weight_j_over * (x[j][0] - x[i][0]);
-			 x[i][1] += weight_j_over * (x[j][1] - x[i][1]);
-			 x[i][2] += weight_j_over * (x[j][2] - x[i][2]);
+		  x[i][0] += weight_j_over * (x[j][0] - x[i][0]);
+		  x[i][1] += weight_j_over * (x[j][1] - x[i][1]);
+		  x[i][2] += weight_j_over * (x[j][2] - x[i][2]);
 			    			
-			 mass[i] = newWeight;
+		  mass[i] = newWeight;
 			
-			 for (int c = j; c < NumberOfBodies; c++) {	// Remove particle j by left-shifting subsequent particles 
+		  for (int c = j; c < NumberOfBodies; c++) {	// Remove particle j by left-shifting subsequent particles
 			
-				x[c] = x[c+1];			// Co-ordinates
-				mass[c] = mass[c+1];	// Mass
-				v[c] = v[c+1];			//	Velocity
+			x[c] = x[c+1];			// Co-ordinates
+			mass[c] = mass[c+1];	// Mass
+			v[c] = v[c+1];			//	Velocity
 			
-			 }	
-			
-			 NumberOfBodies--;  
-			 j--;	// Decrement j as the "old" j has been deleted
-			  
-distance = sqrt(distance);
-			  
-		  }	else {
-
-			distance = sqrt(distance);
-		
-			  double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
-      		  double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
-      		  double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
-
-            forces0[i] += force0;
-      		forces0[j] += -force0;
-
-      		forces1[i] += force1;
-      		forces1[j] += -force1;
-
-      		forces2[i] += force2;
-      		forces2[j] += -force2;
-		  
 		  }
+			
+		  NumberOfBodies--;
+		  j--;	// Decrement j as the "old" j has been deleted
+          distance = sqrt(distance);
+			  
+		} else {
 
-		minDx = std::min( minDx, distance );
+		  distance = sqrt(distance);
+
+		  double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
+      	  double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
+      	  double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
+
+          forces0[i] += force0;
+      	  forces0[j] += -force0;
+
+      	  forces1[i] += force1;
+      	  forces1[j] += -force1;
+
+      	  forces2[i] += force2;
+      	  forces2[j] += -force2;
+		  
+		}
+
+		 minDx = std::min( minDx, distance );
 		  
 	  }
     
@@ -270,7 +269,7 @@ distance = sqrt(distance);
   
   for (int i = 0; i < NumberOfBodies; i++) {	// Update positions and velocity of particles
 	  
-	  x[i][0] = x[i][0] + timeStepSize * v[i][0];
+	x[i][0] = x[i][0] + timeStepSize * v[i][0];
 	x[i][1] = x[i][1] + timeStepSize * v[i][1];
 	x[i][2] = x[i][2] + timeStepSize * v[i][2];  
 
@@ -280,7 +279,7 @@ distance = sqrt(distance);
 
 	double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 	  
-	  maxV = std::max(maxV, totalV);
+	maxV = std::max(maxV, totalV);
 
   }
   
@@ -295,8 +294,8 @@ distance = sqrt(distance);
   t += timeStepSize;
   
   delete[] forces0;
-	delete[] forces1;	
-	delete[] forces2;
+  delete[] forces1;
+  delete[] forces2;
 
 }
 

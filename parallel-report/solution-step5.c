@@ -66,16 +66,12 @@ void updateBody() {
 
   maxV   = 0.0;
   minDx  = std::numeric_limits<double>::max();
-  forces = new double*[NumberOfBodies];
 
-  #pragma omp parallel for
-  for (int i = 0; i < NumberOfBodies; i++) {
+  double* forces0 = new double[NumberOfBodies];
+  double* forces1 = new double[NumberOfBodies];
+  double* forces2 = new double[NumberOfBodies];
 
-	 forces[i] = new double[3]{0.0, 0.0, 0.0};
-
-  }
-
-  #pragma omp parallel for reduction(min:minDx)
+  #pragma omp parallel for reduction(std::min:minDx) reduction(+:forces0[:NumberOfBodies]) reduction(+:forces1[:NumberOfBodies]) reduction(+:forces2[:NumberOfBodies])
   for (int k = 0; k < NumberOfBodies * (NumberOfBodies - 1) / 2; k++) {
 
 	size_t i = k / NumberOfBodies, j = k % NumberOfBodies;
@@ -100,56 +96,43 @@ void updateBody() {
       double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
       double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
-      forces[i][0] += force0;
-      forces[j][0] -= force0;
+      forces0[i] += force0;
+      forces0[j] += -force0;
 
-      forces[i][1] += force1;
-      forces[j][1] -= force1;
+      forces1[i] += force1;
+      forces1[j] += -force1;
 
-      forces[i][2] += force2;
-      forces[j][2] -= force2;
-
-    }
-
-    if (distance < minDx) {
-
-      minDx = distance;
+      forces2[i] += force2;
+      forces2[j] += -force2;
 
     }
+
+    minDx = distance;
 
   }
 
-  #pragma omp parallel for reduction(max:maxV)
+  #pragma omp parallel for reduction(std::max:maxV)
   for (int i = 0; i < NumberOfBodies; i++) {
-
+	
 	x[i][0] = x[i][0] + timeStepSize * v[i][0];
 	x[i][1] = x[i][1] + timeStepSize * v[i][1];
-	x[i][2] = x[i][2] + timeStepSize * v[i][2];
+	x[i][2] = x[i][2] + timeStepSize * v[i][2];  
 
-	v[i][0] = v[i][0] + timeStepSize * forces[i][0] / mass[i];
-    v[i][1] = v[i][1] + timeStepSize * forces[i][1] / mass[i];
-    v[i][2] = v[i][2] + timeStepSize * forces[i][2] / mass[i];
+	v[i][0] = v[i][0] + timeStepSize * forces0[i] / mass[i];
+    v[i][1] = v[i][1] + timeStepSize * forces1[i] / mass[i];
+    v[i][2] = v[i][2] + timeStepSize * forces2[i] / mass[i];
 
-	double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
-
-	if (totalV > maxV) {
-
-		maxV = totalV;
-    }
+	maxV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 
   }
 
   t += timeStepSize;
 
-  for (int i = 0; i < NumberOfBodies; i+) { // Free up memory.
-
-        delete[] forces[i];
-  }
-
-  delete[] forces;
+  delete[] forces0;
+  delete[] forces1;
+  delete[] forces2;
 
 }
-
 
 /**
  * Main routine.

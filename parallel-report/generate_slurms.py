@@ -11,17 +11,16 @@ template = """#!/bin/sh
 #SBATCH -t 02:00:00
 #SBATCH --exclusive
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=24
 #SBATCH --mail-user=ffgt86@dur.ac.uk
 #SBATCH --mail-type=ALL
 source /etc/profile.d/modules.sh
 module load intel/xe_2017.2
-export OMP_NUM THREADS={}
+export OMP_NUM_THREADS={}
 ./solution-step5 5.0 1e-6 $(cat {})"""
 
 # So we have way more threads available.
 # So each NODE has 24 CPUs. Each CPU has 8 cores and 16 threads.
-# Bam bam bam bam fuck you.
 # So I've been threading across CPUs?
 # I don't know!
 # Let's stick with 1 NODE, 1 CPU, and just increase the number of threads.

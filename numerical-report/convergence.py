@@ -131,8 +131,6 @@ if __name__ == "__main__":
 
     subprocess.call(["g++", "-O3", "--std=c++11", "report.c", "-o", "report"])
 
-    if not os.path.exists("convergence.csv"):    # Run convergence if no output exists
-
-        run()
-
-    plot()
+    #if not os.path.exists("convergence.csv"):    # Run convergence if no output exists
+run()
+plot()

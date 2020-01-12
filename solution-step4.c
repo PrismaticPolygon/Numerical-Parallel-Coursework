@@ -155,7 +155,7 @@ void printParaviewSnapshot() {
   static int counter = -1;
   counter++;
   std::stringstream filename;
-  filename << "results/result-" << counter <<  ".vtp";
+  filename << "result-" << counter <<  ".vtp";
   std::ofstream out( filename.str().c_str() );
   out << "<VTKFile type=\"PolyData\" >" << std::endl
       << "<PolyData>" << std::endl
@@ -190,11 +190,11 @@ void updateBody() {
   maxV   = 0.0;
   minDx  = std::numeric_limits<double>::max();
 
-  forces0 = new double[NumberOfBodies] = {};    // Sets to 0
-  forces1 = new double[NumberOfBodies] = {};    // Sets to 0
-  forces2 = new double[NumberOfBodies] = {};    // Sets to 0
+  double* forces0 = new double[NumberOfBodies]{0};
+  double* forces1 = new double[NumberOfBodies]{0};
+  double* forces2 = new double[NumberOfBodies]{0};
 
-  #pragma omp parallel for reduction(std::min:minDx)
+  #pragma omp parallel for reduction(std::min:minDx) reduction(+:forces0[:NumberOfBodies]) reduction(+:forces1[:NumberOfBodies]) reduction(+:forces2[:NumberOfBodies])
   for (int k = 0; k < NumberOfBodies * (NumberOfBodies - 1) / 2; k++) {
 
 	size_t i = k / NumberOfBodies, j = k % NumberOfBodies;
@@ -220,13 +220,13 @@ void updateBody() {
       double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
       forces0[i] += force0;
-      forces0[j] -= force0;
+      forces0[j] += -force0;
 
       forces1[i] += force1;
-      forces1[j] -= force1;
+      forces1[j] += -force1;
 
       forces2[i] += force2;
-      forces2[j] -= force2;
+      forces2[j] += -force2;
 
     }
 
@@ -241,11 +241,11 @@ void updateBody() {
 	x[i][1] = x[i][1] + timeStepSize * v[i][1];
 	x[i][2] = x[i][2] + timeStepSize * v[i][2];  
 
-	v[i][0] = v[i][0] + timeStepSize * forces[i][0] / mass[i];
-    v[i][1] = v[i][1] + timeStepSize * forces[i][1] / mass[i];
-    v[i][2] = v[i][2] + timeStepSize * forces[i][2] / mass[i];
+	v[i][0] = v[i][0] + timeStepSize * forces0[i] / mass[i];
+    v[i][1] = v[i][1] + timeStepSize * forces1[i] / mass[i];
+    v[i][2] = v[i][2] + timeStepSize * forces2[i] / mass[i];
 
-    maxV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
+	maxV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 
   }
 

@@ -175,16 +175,16 @@ void updateBody() {
 
   maxV = 0.0;
 
-  for (int i = 0; i < NumberOfBodies; i++) {  // Iterate through particles
+  for (int i = 0; i < NumberOfBodies - 1; i++) {  // Iterate through particles
 
     int timeSteps = pow(2, buckets[i]);									// The number of timesteps to run bucket k for
     double timeStepSizeEuler = timeStepSize / timeSteps;                // The size of the timestep for bucket k
 
     for (int q = 0; q < timeSteps; q++) { // Iterate through timesteps
 
-      for (int j = 0; j < NumberOfBodies; j++) {  // Iterate through other bodies
+      for (int j = i + 1; j < NumberOfBodies; j++) {  // Iterate through other bodies
 
-          //std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
+          // std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
           double distance = (
             (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
@@ -226,20 +226,21 @@ void updateBody() {
           } else {
 
             distance = sqrt(distance);
+
             double weighted_cubed_distance = mass[i] * mass[j] / distance / distance / distance;
 
             double force0 = (x[j][0] - x[i][0]) * weighted_cubed_distance;
             double force1 = (x[j][1] - x[i][1]) * weighted_cubed_distance;
             double force2 = (x[j][2] - x[i][2]) * weighted_cubed_distance;
 
-            forces0[i] += force0;
-            forces0[j] += -force0;
+            forces0[i] += force0;	// Force caused by j on i in axis 0
+            //forces0[j] += -force0;
 
             forces1[i] += force1;
-            forces1[j] += -force1;
+            //forces1[j] += -force1;
 
             forces2[i] += force2;
-            forces2[j] += -force2;
+            //forces2[j] += -force2;
 
           }
 

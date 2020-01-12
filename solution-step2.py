@@ -8,7 +8,7 @@ if __name__ == "__main__":
         "./solution-step2",                 # Compiled C executable
         "0.01",                             # tPlotDelta
         "3.0",                               # tFinal
-        "1e-6",                             # timeStepSize
+        "1e-7",                             # timeStepSize
         "0", "0", "0", "0", "0", "0", "4.0",  # [x, y, z], [v_x, v_y, v_z], m
         "3.0", "0", "0", "0", "0", "0", "5.0",  # [x, y, z], [v_x, v_y, v_z], m
         "3.0", "4.0", "0", "0", "0", "0", "3.0"   # [x, y, z], [v_x, v_y, v_z], m

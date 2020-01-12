@@ -158,21 +158,19 @@ void printParaviewSnapshot() {
 void updateBody() {
 
   minDx  		  = std::numeric_limits<double>::max();	// The minimum distance between particles
-  forces          = new double*[NumberOfBodies];	      // A 2D array of the forces on each molecule
+
+  double* forces0 = new double[NumberOfBodies]{0};
+  double* forces1 = new double[NumberOfBodies]{0};
+  double* forces2 = new double[NumberOfBodies]{0};
+  int* buckets    = new int[NumberOfBodies]{0};             // The number of buckets
+
   int numBuckets  = 10;
-  int* buckets    = new int[NumberOfBodies];             // The number of buckets
   double vBucket  = maxV / (numBuckets - 1);		         // The partition
 
-  #pragma omp parallel for
-  for (int i = 0; i < NumberOfBodies; i++) {
+  if (maxV != 0.0) {    // Buckets are already at 0. Prevents division by 0 error.
 
-	forces[i] = new double[3]{0.0, 0.0, 0.0};             // Initialise forces on each particle to 0
-
-    if (maxV == 0) {
-
-      buckets[i] = 0;
-
-    } else {
+    #pragma omp parallel for
+    for (int i = 0; i < NumberOfBodies; i++) {
 
       double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 
@@ -183,13 +181,12 @@ void updateBody() {
   }
 
   maxV = 0.0;
-  // I can't make it a nice one.
 
-  #pragma omp parallel for
+  #pragma omp parallel for reduction(std::max:maxV)
   for (int i = 0; i < NumberOfBodies - 1; i++) {  // Iterate through particles
 
     int timeSteps = pow(2, buckets[i]);									// The number of timesteps to run bucket k for
-    double timeStepSizeEuler = timeStepSize / timeSteps;          // The size of the timestep for bucket k
+    double timeStepSizeEuler = timeStepSize / timeSteps;                // The size of the timestep for bucket k
 
     for (int q = 0; q < timeSteps; q++) { // Iterate through timesteps
 
@@ -256,13 +253,7 @@ void updateBody() {
 
     }
 
-    double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
-
-	if (totalV > maxV) {
-
-	  maxV = totalV;
-
-    }
+	maxV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);;
 
   }
 
@@ -276,21 +267,9 @@ void updateBody() {
 
   t += timeStepSize;
 
-  #pragma omp for parallel
-  for (int i = 0; i < NumberOfBodies; i+) { // Free up memory.
-
-    delete[] forces[i];
-
-  }
-
-  delete[] forces;
-
-  #pragma omp for parallel
-  for (int i = 0; i < numBuckets; i++) {
-
-    delete buckets[i];
-
-  }
+  delete[] forces0;
+  delete[] forces1;
+  delete[] forces2;
 
   delete[] buckets;
 

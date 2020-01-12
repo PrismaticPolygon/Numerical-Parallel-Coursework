@@ -97,8 +97,5 @@ if __name__ == "__main__":
 
     subprocess.call(["g++", "-O3", "--std=c++11", "report.c", "-o", "report"])
 
-    if not os.path.exists("accuracy.csv"):
-
-        run()
-
-    plot()
+run()
+plot()

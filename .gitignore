@@ -2,3 +2,5 @@
 *.exe
 
 ~*.docx
+*.vtp
+*.vtd

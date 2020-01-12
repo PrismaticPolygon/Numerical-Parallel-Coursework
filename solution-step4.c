@@ -194,13 +194,6 @@ void updateBody() {
   forces1 = new double[NumberOfBodies] = {};    // Sets to 0
   forces2 = new double[NumberOfBodies] = {};    // Sets to 0
 
-  // 64 cores -> 128 threads.
-  // g++ -fopenmp
-  // lscpu
-
-  // When merging velocity, weighted positions
-  // Reduction force.
-
   #pragma omp parallel for reduction(std::min:minDx)
   for (int k = 0; k < NumberOfBodies * (NumberOfBodies - 1) / 2; k++) {
 
@@ -237,7 +230,7 @@ void updateBody() {
 
     }
 
-    std::min( minDx,distance );
+    minDx = distance;
 
   }
 
@@ -252,9 +245,7 @@ void updateBody() {
     v[i][1] = v[i][1] + timeStepSize * forces[i][1] / mass[i];
     v[i][2] = v[i][2] + timeStepSize * forces[i][2] / mass[i];
 
-	double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
-
-    std::max(maxV,totalV);
+    maxV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 
   }
 

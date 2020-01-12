@@ -83,7 +83,6 @@ void updateBody() {
 
 	}
 
-	// Calculate the distance from particle i to particle j
     double distance = sqrt(
       (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
       (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +

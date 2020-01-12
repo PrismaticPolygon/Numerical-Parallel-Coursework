@@ -151,22 +151,19 @@ void printParaviewSnapshot() {
  */
 void updateBody() {
 
-  maxV            = 0.0;	                              // The highest velocity
-  minDx  		   = std::numeric_limits<double>::max();	// The minimum distance between particles
-  forces          = new double*[NumberOfBodies];	      // A 2D array of the forces on each molecule
+  minDx  		  = std::numeric_limits<double>::max();	// The minimum distance between particles
+
+  double* forces0 = new double[NumberOfBodies]{0};
+  double* forces1 = new double[NumberOfBodies]{0};
+  double* forces2 = new double[NumberOfBodies]{0};
+  int* buckets    = new int[NumberOfBodies]{0};             // The number of buckets
+
   int numBuckets  = 10;
-  int* buckets    = new int[NumberOfBodies];             // The number of buckets
   double vBucket  = maxV / (numBuckets - 1);		         // The partition
 
-  for (int i = 0; i < NumberOfBodies; i++) {
+  if (maxV != 0.0) {    // Buckets are already at 0.
 
-	forces[i] = new double[3]{0.0, 0.0, 0.0};             // Initialise forces on each particle to 0
-
-    if (maxV == 0) {
-
-      buckets[i] = 0;
-
-    } else {
+    for (int i = 0; i < NumberOfBodies; i++) {
 
       double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 
@@ -189,15 +186,13 @@ void updateBody() {
 
           //std::cout << "Comparing particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
-          double distance = sqrt(
+          double distance = (
             (x[i][0] - x[j][0]) * (x[i][0] - x[j][0]) +
             (x[i][1] - x[j][1]) * (x[i][1] - x[j][1]) +
             (x[i][2] - x[j][2]) * (x[i][2] - x[j][2])
           );
 
-          minDx = std::min( minDx,distance );
-
-          if (distance < diameter) {
+          if (distance < <= 0.0001) {
 
             //std::cout << "Merging particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
@@ -210,31 +205,36 @@ void updateBody() {
             for (int c = j; c < NumberOfBodies; c++) {	// Remove particle from global arrays
 
               x[c]       = x[c + 1];					// Co-ordinates
-              mass[c]    = mass[c + 1];   			// Mass
+              mass[c]    = mass[c + 1];   			    // Mass
               v[c]       = v[c + 1];					// Velocity
-              buckets[c] = buckets[c + 1];            // Buckets
+              buckets[c] = buckets[c + 1];              // Buckets
 
             }
 
             NumberOfBodies--;
             j--;	// Decrement b as the "old" b has been deleted
+            distance = sqrt(distance);
 
           } else {
+
+            distance = sqrt(distance);
 
             double force0 = (x[j][0] - x[i][0]) * mass[i] * mass[j] / distance / distance / distance;
             double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
             double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
-            forces[i][0] += force0;
-            forces[j][0] -= force0;
+            forces0[i] += force0;
+            forces0[j] += -force0;
 
-            forces[i][1] += force1;
-            forces[j][1] -= force1;
+            forces1[i] += force1;
+            forces1[j] += -force1;
 
-            forces[i][2] += force2;
-            forces[j][2] -= force2;
+            forces2[i] += force2;
+            forces2[j] += -force2;
 
           }
+
+          minDx = std::min( minDx,distance );
 
         }
 
@@ -242,30 +242,33 @@ void updateBody() {
 	  x[i][1] = x[i][1] + timeStepSizeEuler * v[i][1];
 	  x[i][2] = x[i][2] + timeStepSizeEuler * v[i][2];
 
-	  v[i][0] = v[i][0] + timeStepSizeEuler * forces[i][0] / mass[i];
-      v[i][1] = v[i][1] + timeStepSizeEuler * forces[i][1] / mass[i];
-      v[i][2] = v[i][2] + timeStepSizeEuler * forces[i][2] / mass[i];
+	  v[i][0] = v[i][0] + timeStepSizeEuler * forces0[i] / mass[i];
+      v[i][1] = v[i][1] + timeStepSizeEuler * forces1[i] / mass[i];
+      v[i][2] = v[i][2] + timeStepSizeEuler * forces2[i] / mass[i];
 
     }
 
     double totalV = sqrt(v[i][0] * v[i][0] + v[i][1] * v[i][1] + v[i][2] * v[i][2]);
 
-	if (totalV > maxV) {
+    maxV = std::max( maxV,totalV );
 
-	  maxV = totalV;
+  }
 
-    }
+  if (NumberOfBodies == 1) {	// Terminate
+
+	tFinal = t;
+
+	std::cout << x[0][0] << ", " << x[0][1] << ", " << x[0][2] << std::endl;
 
   }
 
   t += timeStepSize;
   
-  for (int i = 0; i < NumberOfBodies; i+) { // Free up memory.
+  delete[] forces0;
+  delete[] forces1;
+  delete[] forces2;
 
-        delete[] forces[i];
-  }
-
-  delete[] forces;
+  delete[] buckets;
 
 }
 

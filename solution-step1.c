@@ -46,6 +46,7 @@ void setUp(int argc, char** argv) {
   timeStepSize = std::stof(argv[readArgument]); readArgument++;
 
   for (int i=0; i<NumberOfBodies; i++) {
+
     x[i] = new double[3];
     v[i] = new double[3];
 

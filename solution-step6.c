@@ -230,14 +230,14 @@ void updateBody() {
           double force1 = (x[j][1] - x[i][1]) * mass[i] * mass[j] / distance / distance / distance;
           double force2 = (x[j][2] - x[i][2]) * mass[i] * mass[j] / distance / distance / distance;
 
-          forces[i][0] += force0;
-          forces[j][0] -= force0;
+          forces0[i] += force0;
+          forces0[j] -= force0;
 
-          forces[i][1] += force1;
-          forces[j][1] -= force1;
+          forces1[i] += force1;
+          forces1[j] -= force1;
 
-          forces[i][2] += force2;
-          forces[j][2] -= force2;
+          forces2[i] += force2;
+          forces2[j] -= force2;
 
         }
 
@@ -247,9 +247,9 @@ void updateBody() {
 	  x[i][1] = x[i][1] + timeStepSizeEuler * v[i][1];
 	  x[i][2] = x[i][2] + timeStepSizeEuler * v[i][2];
 
-	  v[i][0] = v[i][0] + timeStepSizeEuler * forces[i][0] / mass[i];
-      v[i][1] = v[i][1] + timeStepSizeEuler * forces[i][1] / mass[i];
-      v[i][2] = v[i][2] + timeStepSizeEuler * forces[i][2] / mass[i];
+	  v[i][0] = v[i][0] + timeStepSizeEuler * forces0[i] / mass[i];
+      v[i][1] = v[i][1] + timeStepSizeEuler * forces1[i] / mass[i];
+      v[i][2] = v[i][2] + timeStepSizeEuler * forces2[i] / mass[i];
 
     }
 

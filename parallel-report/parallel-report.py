@@ -1,5 +1,3 @@
-# Study the scalability of your code and compare it to both a weak scaling and a strong scaling model.
-
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import rc
@@ -22,18 +20,16 @@ def format_func(value, tick_number):
     if "e" in float_str:
 
         base, exponent = float_str.split("e")
+
         return r"${0} \times 10^{{{1}}}$".format(base, int(exponent))
 
     else:
 
         return float_str
 
-# Need to figure out graphing the weak. Then I'm good for the day. Am I? It's not very late.
-# I'll start thinking about my game. Most likely, too my dissertation script has finished running.
-
 def strong():
 
-    df = pd.read_csv("results.csv")
+    df = pd.read_csv("run_5.csv")
 
     t_1 = df.iloc[0]["runtime"]    # Time taken on 1 core
 
@@ -47,10 +43,17 @@ def strong():
 
     params, params_covariance = optimize.curve_fit(amdahl, df["threads"], df["speedup"])
 
+    print("s:", params[0])  # s = 0.03 for Amdahl's law
+    print("p:", params[1])
+
+    plt.plot(df["threads"], amdahl(df["threads"], params[0], params[1]), label='Fitted function', color="green")
+
+    params, params_covariance = optimize.curve_fit(amdahl, df["threads"][:-2], df["speedup"][:-2])
+
     print("s:", params[0]) # s = 0.03 for Amdahl's law
     print("p:", params[1])
 
-    plt.plot(df["threads"], amdahl(df["threads"], params[0], params[1]), label='Fitted function', color="red")
+    plt.plot(df["threads"][:-2], amdahl(df["threads"][:-2], params[0], params[1]), label=r'Fitted function ignoring $N=12,16$', color="red")
 
     plt.xlabel(r'Number of threads $N$')
     plt.ylabel(r'Speedup')
@@ -58,7 +61,7 @@ def strong():
     plt.title(r"Amdahl's law")
     plt.legend(loc='best')
 
-    plt.tight_layout()
+    plt.tight_layout(h_pad=0.6)
 
     plt.savefig("strong.png")
 
@@ -74,7 +77,7 @@ def weak():
 
     global t_1, s_1
 
-    df = pd.read_csv("results_2.csv")
+    df = pd.read_csv("run_5.csv")
     df = df[df["type"] == "weak"]
 
     t_1 = df.iloc[0]["runtime"]    # Time taken on 1 core
@@ -99,7 +102,7 @@ def weak():
     plt.title(r"Gustafson's law")
     plt.legend(loc='best')
 
-    plt.tight_layout()
+    plt.tight_layout(h_pad=0.6)
 
     plt.savefig("weak.png")
 
@@ -108,6 +111,6 @@ def weak():
 
 if __name__ == "__main__":
 
-    # strong()
+    strong()
 
     weak()

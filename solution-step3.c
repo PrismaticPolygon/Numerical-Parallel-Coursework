@@ -197,18 +197,18 @@ void updateBody() {
             //std::cout << "Merging particles " << i << " (bucket " << buckets[i] << ") and " << j << " (bucket " << buckets[j] << ")" << std::endl;
 
             double newWeight = mass[i] + mass[j];
-		    double weight_i_over = mass[i] / newWeight;
-		    double weight_j_over = mass[j] / newWeight;
+		  double weight_i_over = mass[i] / newWeight;
+		  double weight_j_over = mass[j] / newWeight;
 
-		    v[i][0] = weight_i_over * v[i][0] + weight_j_over * v[j][0];
-		    v[i][1] = weight_i_over * v[i][1] + weight_j_over * v[j][1];
-		    v[i][2] = weight_i_over * v[i][2] + weight_j_over * v[j][2];
+		  v[i][0] = weight_i_over * v[i][0] + weight_j_over * v[j][0];
+		  v[i][1] = weight_i_over * v[i][1] + weight_j_over * v[j][1];
+		  v[i][2] = weight_i_over * v[i][2] + weight_j_over * v[j][2];
 
-		    x[i][0] += weight_j_over * (x[j][0] - x[i][0]);
-		    x[i][1] += weight_j_over * (x[j][1] - x[i][1]);
-		    x[i][2] += weight_j_over * (x[j][2] - x[i][2]);
-
-		    mass[i] = newWeight;
+		  x[i][0] = weight_i_over * x[i][0] + weight_j_over * x[j][0];
+		  x[i][1] = weight_i_over * x[i][1] + weight_j_over * x[j][1];
+		  x[i][2] = weight_i_over * x[i][2] + weight_j_over * x[j][2];
+			    			
+		  mass[i] = newWeight;
 
             for (int c = j; c < NumberOfBodies; c++) {	// Remove particle from global arrays
 

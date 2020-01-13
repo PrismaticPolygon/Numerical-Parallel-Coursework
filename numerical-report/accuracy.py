@@ -10,7 +10,7 @@ from matplotlib import rc
 rc("text", usetex="True")   # Use LaTeX text rendering
 
 args = [
-    "./numerical-report",                       # Compiled C executable
+    "./report",                       # Compiled C executable
     "0.01",                                     # tPlotDelta
     "3.0",                                      # tFinal
     "1e-8",                                     # timeStepSize
@@ -98,4 +98,4 @@ if __name__ == "__main__":
     subprocess.call(["g++", "-O3", "--std=c++11", "report.c", "-o", "report"])
 
 run()
-plot()
+# plot()

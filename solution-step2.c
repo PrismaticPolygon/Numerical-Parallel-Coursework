@@ -224,9 +224,9 @@ void updateBody() {
 		  v[i][1] = weight_i_over * v[i][1] + weight_j_over * v[j][1];
 		  v[i][2] = weight_i_over * v[i][2] + weight_j_over * v[j][2];
 
-		  x[i][0] += weight_j_over * (x[j][0] - x[i][0]);
-		  x[i][1] += weight_j_over * (x[j][1] - x[i][1]);
-		  x[i][2] += weight_j_over * (x[j][2] - x[i][2]);
+		  x[i][0] = weight_i_over * x[i][0] + weight_j_over * x[j][0];
+		  x[i][1] = weight_i_over * x[i][1] + weight_j_over * x[j][1];
+		  x[i][2] = weight_i_over * x[i][2] + weight_j_over * x[j][2];
 			    			
 		  mass[i] = newWeight;
 			
